@@ -114,17 +114,17 @@ Complete architectural refactoring from Vite/React SPA to Next.js 15 with server
 
 ### Deprecated
 
-#### Removed Features (Temporarily)
-- Original Vite/React components (preserved in `src/` for reference)
-- Client-side localStorage for settings (migrated to PostgreSQL)
-- Manual token entry UI (replaced with OAuth)
+#### Breaking Changes
+- Complete rewrite from Vite/React to Next.js 15
+- Client-side localStorage replaced with PostgreSQL database
+- Manual token entry replaced with secure OAuth flow
 
 #### Migration Path
-All v1.0 features will be migrated to v2.0 architecture:
-- UI components from `src/components/` → `components/`
-- Client-side features → Server/Client Component split
-- localStorage → PostgreSQL persistence
-- See [Migration Guide](./migration) for details
+v1.0 architecture has been replaced with v2.0:
+- Vite → Next.js 15 App Router
+- Client-side state → Server Components + PostgreSQL
+- localStorage → Database persistence
+- See [Migration Guide](./migration) for complete migration details
 
 ### Fixed
 

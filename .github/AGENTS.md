@@ -2,14 +2,15 @@
 
 This document provides comprehensive instructions for AI coding agents (GitHub Copilot, Cursor, Claude, etc.) working on the GistLens project.
 
-## 🚨 CRITICAL: Security Notice
+## 🔒 Security Notice
 
-⚠️ **The `src/` directory contains OLD client-side code from the Vite/React version and should NOT be used as a reference for new code.**
+**GistLens v2.0 uses a secure server-side architecture with Next.js 15:**
 
-- This directory exists only for reference during migration
-- It is excluded from the Next.js build
-- **DO NOT copy patterns from `src/` - use the new Next.js patterns in `app/`, `components/`, and `lib/` instead**
-- Security issues in old code (like exposed secrets) do NOT affect the new Next.js version
+- All secrets managed server-side via environment variables
+- GitHub OAuth with Auth.js (NextAuth.js v5)
+- Database-backed sessions with PostgreSQL
+- No client-side secret exposure
+- **Always use patterns from `app/`, `components/`, and `lib/` directories**
 
 ## 📚 Specialized Agent Guides
 

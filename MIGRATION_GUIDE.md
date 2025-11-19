@@ -220,8 +220,8 @@ The following features from the original app need to be migrated to the new Next
 - [ ] Responsive design
 
 ### Components Already Available
-- ✅ All UI components in `src/components/` can be copied to `components/`
-- ✅ Utility functions in `src/lib/` can be adapted
+- ✅ UI components ready in `components/ui/` (Button, etc.)
+- ✅ Utility functions available in `lib/utils.ts`
 - ✅ Tailwind config is ready
 - ✅ TypeScript config is set up
 
@@ -307,17 +307,19 @@ npm start
 
 ## Security Improvements
 
-### Before
-- ❌ GitHub client secret in `src/lib/github-auth.ts`
-- ❌ Tokens stored in localStorage
-- ❌ Manual token entry required
+### Before (Vite + React v1.0)
+- ❌ GitHub client secrets exposed in frontend code
+- ❌ Tokens stored in localStorage (accessible to any JavaScript)
+- ❌ Manual token entry required (security risk)
+- ❌ No server-side validation
 
-### After
+### After (Next.js v2.0)
 - ✅ Client secret only in server-side `.env.local`
-- ✅ Sessions encrypted with Auth.js
+- ✅ Sessions encrypted with Auth.js (NextAuth v5)
 - ✅ Tokens never sent to client
 - ✅ Full OAuth flow works securely
 - ✅ CSRF protection built-in
+- ✅ Database-backed sessions
 - ✅ SQL injection protection with parameterized queries
 
 ## Troubleshooting
@@ -356,10 +358,10 @@ npm run build
    - Verify you can authenticate
    - Check database has user record
 
-2. **Migrate UI components**
-   - Copy components from `src/components/` to `components/`
-   - Update imports to use Next.js conventions
-   - Convert client-side components as needed
+2. **Build UI components**
+   - Use existing `components/ui/button.tsx` as reference
+   - Follow shadcn/ui patterns for new components
+   - Use Server Components by default, Client Components only when needed
 
 3. **Implement remaining features**
    - Gist viewer

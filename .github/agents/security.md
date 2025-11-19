@@ -30,14 +30,13 @@ Secrets should ONLY be accessed in:
 - Frontend utilities accessible to browser
 - Any code that gets bundled for the client
 
-### 3. **Legacy Code Warning**
+### 3. **Secure Architecture**
 
-⚠️ **IMPORTANT**: The `src/` directory contains OLD client-side code from the Vite/React version. This code is NOT used in production and exists only for reference during migration.
-
-**Security issues in `src/` directory:**
-- `src/lib/github-auth.ts` - Contains OAuth logic but is client-side only
-- These files are NOT included in the Next.js build
-- Do NOT copy patterns from `src/` - use the new Next.js patterns instead
+✅ **GistLens v2.0 uses server-side secret management:**
+- All OAuth secrets stored in environment variables (`.env.local`)
+- GitHub tokens managed by Auth.js server-side sessions
+- Database-backed user sessions with PostgreSQL
+- No secrets exposed in client bundle
 
 ### 4. **Authentication Token Handling**
 
