@@ -32,7 +32,8 @@ import {
   Twitter,
   Facebook,
   Linkedin,
-  Mail
+  Mail,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -45,6 +46,7 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { DataViewer } from '@/components/DataViewer';
 import { PDFViewer } from '@/components/PDFViewer';
+import { SettingsDialog, type SettingsConfig } from '@/components/SettingsDialog';
 import { getFileType } from '@/lib/fileTypes';
 import { cn } from '@/lib/utils';
 
@@ -477,6 +479,19 @@ export default function GistLens() {
   const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [featuredGists, setFeaturedGists] = useState<FeaturedGist[]>(DEFAULT_FEATURED_GISTS);
   const [loadingFeatured, setLoadingFeatured] = useState<boolean>(false);
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [settings, setSettings] = useState<SettingsConfig>(() => {
+    const saved = localStorage.getItem('gistlens-settings');
+    return saved ? JSON.parse(saved) : {
+      autoPreviewMarkdown: true,
+      defaultTheme: 'dark',
+      showLineNumbers: true,
+      fontSize: 'medium',
+      enableSyntaxHighlighting: true,
+      autoLoadGists: true,
+      historyLimit: 10,
+    };
+  });
 
   // Handlers (defined early to avoid hoisting issues)
   const addToHistory = useCallback((data) => {
@@ -863,6 +878,27 @@ export default function GistLens() {
     localStorage.setItem('gistlens-history', JSON.stringify(newHistory));
   };
 
+  const handleSaveSettings = (newSettings: SettingsConfig) => {
+    setSettings(newSettings);
+    localStorage.setItem('gistlens-settings', JSON.stringify(newSettings));
+    
+    // Apply theme setting
+    if (newSettings.defaultTheme === 'light') {
+      setDarkMode(false);
+    } else if (newSettings.defaultTheme === 'dark') {
+      setDarkMode(true);
+    } else {
+      // System theme
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(systemDark);
+    }
+    
+    // Apply other settings
+    if (newSettings.autoPreviewMarkdown !== settings.autoPreviewMarkdown) {
+      setPreviewMode(newSettings.autoPreviewMarkdown);
+    }
+  };
+
   const files = gistData ? Object.values(gistData.files) : [];
   const activeFile = files[activeFileIndex];
 
@@ -986,6 +1022,24 @@ export default function GistLens() {
             </TooltipTrigger>
             <TooltipContent>
               <p>Toggle theme (⌘D)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSettingsOpen(true)}
+                className="hover:bg-primary/10 relative overflow-hidden group shrink-0"
+                aria-label="Settings"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                <Settings className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Settings</p>
             </TooltipContent>
           </Tooltip>
           
@@ -1328,6 +1382,14 @@ export default function GistLens() {
         )}
       </div>
     </div>
+
+    {/* Settings Dialog */}
+    <SettingsDialog
+      isOpen={settingsOpen}
+      onClose={() => setSettingsOpen(false)}
+      settings={settings}
+      onSave={handleSaveSettings}
+    />
     </TooltipProvider>
   );
 }
