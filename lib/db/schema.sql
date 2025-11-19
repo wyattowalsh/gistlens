@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
   compact_mode BOOLEAN DEFAULT false,
   enable_animations BOOLEAN DEFAULT true,
   wrap_long_lines BOOLEAN DEFAULT false,
+  icon_set TEXT DEFAULT 'lucide',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
