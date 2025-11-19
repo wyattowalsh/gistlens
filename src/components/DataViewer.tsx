@@ -63,7 +63,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
             }
             setIsLoading(false);
           },
-          error: (error) => {
+          error: (error: Error) => {
             setError('Failed to parse file: ' + error.message);
             setIsLoading(false);
           }
@@ -284,7 +284,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
             <table className="w-full text-sm">
               <thead className="bg-muted sticky top-0 z-10">
                 <tr>
-                  {data.fields.map((field, idx) => (
+                  {data.fields?.map((field, idx) => (
                     <th 
                       key={idx}
                       className="px-4 py-3 text-left font-semibold cursor-pointer hover:bg-muted/80 transition-colors group"
@@ -314,7 +314,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
                     key={idx}
                     className="border-t hover:bg-muted/50 transition-colors"
                   >
-                    {data.fields.map((field, fieldIdx) => (
+                    {data.fields?.map((field, fieldIdx) => (
                       <td 
                         key={fieldIdx}
                         className="px-4 py-3"
@@ -327,7 +327,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
                 {filteredAndSortedData.length === 0 && (
                   <tr>
                     <td 
-                      colSpan={data.fields.length}
+                      colSpan={data.fields?.length || 1}
                       className="px-4 py-8 text-center text-muted-foreground"
                     >
                       No data found

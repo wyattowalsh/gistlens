@@ -325,5 +325,3 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
     </div>
   );
 }
-
-export type { SettingsConfig };
