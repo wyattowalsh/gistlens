@@ -62,7 +62,7 @@ export async function createUser(userData: {
   
   const { data, error } = await supabase
     .from('users')
-    .insert({
+    .insert([{
       id: userData.id,
       email: userData.email || null,
       name: userData.name || null,
@@ -71,7 +71,7 @@ export async function createUser(userData: {
       avatar_url: userData.avatarUrl || null,
       bio: userData.bio || null,
       public_gists: userData.publicGists || 0,
-    })
+    }] as any)
     .select()
     .single();
 
@@ -90,7 +90,7 @@ export async function updateUser(userId: string, userData: Partial<{
   bio: string;
   publicGists: number;
 }>) {
-  const supabase = await createServerClient();
+  const supabase: any = await createServerClient();
   
   const updateData: any = {};
   
@@ -141,7 +141,7 @@ export async function createDefaultSettings(userId: string) {
   
   const { data, error } = await supabase
     .from('user_settings')
-    .insert({ user_id: userId })
+    .insert([{ user_id: userId }] as any)
     .select()
     .single();
 
@@ -154,7 +154,7 @@ export async function createDefaultSettings(userId: string) {
 }
 
 export async function updateUserSettings(userId: string, settings: Record<string, any>) {
-  const supabase = await createServerClient();
+  const supabase: any = await createServerClient();
   
   const allowedFields = [
     'telemetry_enabled', 'telemetry_api_key', 'auto_preview_markdown',
@@ -202,14 +202,14 @@ export async function addToGistHistory(historyData: {
   
   const { data, error } = await supabase
     .from('gist_history')
-    .upsert({
+    .upsert([{
       user_id: historyData.userId,
       gist_id: historyData.gistId,
       gist_owner: historyData.gistOwner || null,
       gist_description: historyData.gistDescription || null,
       file_count: historyData.fileCount || 0,
       viewed_at: new Date().toISOString(),
-    }, {
+    }] as any, {
       onConflict: 'user_id,gist_id',
     })
     .select()
@@ -283,13 +283,13 @@ export async function upsertCustomStyle(styleData: {
   
   const { data, error } = await supabase
     .from('custom_styles')
-    .upsert({
+    .upsert([{
       user_id: styleData.userId,
       target: styleData.target,
       css: styleData.css,
       enabled: styleData.enabled,
       last_modified: new Date().toISOString(),
-    }, {
+    }] as any, {
       onConflict: 'user_id,target',
     })
     .select()
