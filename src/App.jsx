@@ -55,8 +55,70 @@ import { cn } from '@/lib/utils';
 
 // --- Utility Functions ---
 
-// Featured/awesome gists for the homepage
-const FEATURED_GISTS = [
+// Curated list of high-quality GitHub users known for excellent gists
+const FEATURED_USERS = [
+  'gaearon', // React core team
+  'addyosmani', // Google Chrome team
+  'sindresorhus', // Prolific open source dev
+  'paulirish', // Chrome DevTools
+  'substack', // Node.js pioneer
+  'tj', // Express.js creator
+  'mbostock', // D3.js creator
+  'defunkt', // GitHub founder
+  'holman', // GitHub
+  'mojombo', // GitHub co-founder
+];
+
+// Get a diverse set of gists using an intelligent algorithm
+const getSmartFeaturedGists = (allGists) => {
+  if (!allGists || allGists.length === 0) return [];
+  
+  // Score each gist based on multiple factors
+  const scoredGists = allGists.map(gist => {
+    let score = 0;
+    const fileCount = Object.keys(gist.files).length;
+    const hasDescription = !!gist.description;
+    const updatedDate = new Date(gist.updated_at);
+    const daysSinceUpdate = (Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24);
+    
+    // More files = more comprehensive (but not too many)
+    score += Math.min(fileCount * 10, 30);
+    
+    // Has description = better documentation
+    if (hasDescription) score += 20;
+    
+    // Longer description = more effort
+    if (gist.description) {
+      score += Math.min(gist.description.length / 10, 20);
+    }
+    
+    // Recent updates are good (within last year)
+    if (daysSinceUpdate < 365) {
+      score += Math.max(0, 20 - daysSinceUpdate / 18.25);
+    }
+    
+    // Public gists get a boost
+    if (gist.public) score += 10;
+    
+    // Variety boost: check file types
+    const fileTypes = new Set(
+      Object.values(gist.files).map(f => 
+        f.filename.split('.').pop()?.toLowerCase() || 'txt'
+      )
+    );
+    score += fileTypes.size * 5;
+    
+    return { ...gist, score };
+  });
+  
+  // Sort by score and return top results
+  return scoredGists
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6); // Get top 6 for diversity
+};
+
+// Fallback featured gists (used if API fails or while loading)
+const DEFAULT_FEATURED_GISTS = [
   {
     id: 'bb3bbe2ecc3dd810a14942e66fb87094',
     title: 'React Hooks Cheatsheet',
@@ -166,9 +228,11 @@ export default function GistLens() {
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [darkMode, setDarkMode] = useState(true);
   const [history, setHistory] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start minimized on homepage
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [featuredGists, setFeaturedGists] = useState(DEFAULT_FEATURED_GISTS);
+  const [loadingFeatured, setLoadingFeatured] = useState(false);
 
   // Handlers (defined early to avoid hoisting issues)
   const addToHistory = useCallback((data) => {
@@ -237,6 +301,67 @@ export default function GistLens() {
     }
   }, []);
 
+  // Fetch featured gists using smart algorithm
+  const fetchFeaturedGists = useCallback(async () => {
+    setLoadingFeatured(true);
+    try {
+      // Fetch gists from multiple featured users
+      const randomUsers = [...FEATURED_USERS]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3); // Pick 3 random featured users
+      
+      const gistPromises = randomUsers.map(user =>
+        fetch(`https://api.github.com/users/${user}/gists?per_page=30`)
+          .then(res => res.ok ? res.json() : [])
+          .catch(() => [])
+      );
+      
+      const results = await Promise.all(gistPromises);
+      const allGists = results.flat();
+      
+      // Use smart algorithm to select best gists
+      const smartSelection = getSmartFeaturedGists(allGists);
+      
+      // Convert to display format
+      const featured = smartSelection.slice(0, 3).map((gist) => {
+        const firstFile = Object.values(gist.files)[0];
+        const ext = firstFile?.filename.split('.').pop()?.toLowerCase();
+        
+        // Determine category and icon based on file type
+        let category = 'Code';
+        let icon = Sparkles;
+        
+        if (ext === 'md' || ext === 'mdx') {
+          category = 'Tutorial';
+          icon = BookOpen;
+        } else if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) {
+          category = 'Code';
+          icon = Sparkles;
+        } else if (['css', 'scss', 'html'].includes(ext)) {
+          category = 'Design';
+          icon = Lightbulb;
+        }
+        
+        return {
+          id: gist.id,
+          title: gist.description || firstFile?.filename || 'Untitled Gist',
+          description: gist.description || `By ${gist.owner.login}`,
+          category,
+          icon,
+        };
+      });
+      
+      if (featured.length > 0) {
+        setFeaturedGists(featured);
+      }
+    } catch (err) {
+      console.error('Failed to fetch featured gists:', err);
+      // Keep default gists on error
+    } finally {
+      setLoadingFeatured(false);
+    }
+  }, []);
+
   // Effects
   useEffect(() => {
     // Load theme
@@ -246,6 +371,9 @@ export default function GistLens() {
     // Load history
     const savedHistory = localStorage.getItem('gistlens-history');
     if (savedHistory) setHistory(JSON.parse(savedHistory));
+
+    // Fetch featured gists on mount
+    fetchFeaturedGists();
 
     // Inject PrismJS for fallback syntax highlighting
     const loadPrism = async () => {
@@ -270,7 +398,7 @@ export default function GistLens() {
       }
     };
     loadPrism();
-  }, []);
+  }, [fetchFeaturedGists]);
 
   useEffect(() => {
     if (darkMode) {
@@ -351,13 +479,17 @@ export default function GistLens() {
     setCurrentGistId(gistId);
     setCurrentUsername(null);
     setView('gist');
-    if (window.innerWidth < 1024) setSidebarOpen(false);
+    // Open sidebar on desktop when viewing a gist for history access
+    if (window.innerWidth >= 1024) setSidebarOpen(true);
+    else setSidebarOpen(false);
   };
 
   const handleUserGistClick = (gistId) => {
     setCurrentGistId(gistId);
     setView('gist');
-    if (window.innerWidth < 1024) setSidebarOpen(false);
+    // Open sidebar on desktop when viewing a gist for history access
+    if (window.innerWidth >= 1024) setSidebarOpen(true);
+    else setSidebarOpen(false);
   };
 
   const handleBackToHome = useCallback(() => {
@@ -367,6 +499,8 @@ export default function GistLens() {
     setGistData(null);
     setUserGists([]);
     setError(null);
+    // Close sidebar when going back to home
+    setSidebarOpen(false);
   }, []);
 
   // Keyboard shortcuts - placed after handleBackToHome is defined
@@ -401,6 +535,7 @@ export default function GistLens() {
     setCurrentGistId(id);
     setCurrentUsername(null);
     setView('gist');
+    // Keep sidebar open on desktop, close on mobile
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
@@ -656,6 +791,8 @@ export default function GistLens() {
           {view === 'home' ? (
             <HomePage 
               onFeaturedGistClick={handleFeaturedGistClick}
+              featuredGists={featuredGists}
+              loadingFeatured={loadingFeatured}
             />
           ) : loading ? (
             <LoadingSkeleton />
@@ -1009,7 +1146,7 @@ const CodeBlock = ({ content, language }) => {
 };
 
 // --- HomePage Component ---
-const HomePage = ({ onFeaturedGistClick }) => {
+const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 sm:space-y-10 md:space-y-12">
       {/* Hero Section */}
@@ -1068,9 +1205,17 @@ const HomePage = ({ onFeaturedGistClick }) => {
             <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-yellow-500" />
             Featured Gists
           </h2>
+          <div className="flex items-center gap-2">
+            {loadingFeatured && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Sparkles className="w-4 h-4 animate-pulse" />
+                <span className="hidden sm:inline">Refreshing...</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-          {FEATURED_GISTS.map((gist) => (
+          {featuredGists.map((gist) => (
             <FeaturedGistCard
               key={gist.id}
               gist={gist}
