@@ -22,7 +22,6 @@ import {
   Star,
   Sparkles,
   Zap,
-  Home,
   User,
   ChevronRight,
   BookOpen,
@@ -32,7 +31,8 @@ import {
   Twitter,
   Facebook,
   Linkedin,
-  Mail
+  Mail,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -40,6 +40,13 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
+import { ImageViewer } from '@/components/ImageViewer';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { AudioPlayer } from '@/components/AudioPlayer';
+import { DataViewer } from '@/components/DataViewer';
+import { PDFViewer } from '@/components/PDFViewer';
+import { SettingsDialog, type SettingsConfig } from '@/components/SettingsDialog';
+import { getFileType } from '@/lib/fileTypes';
 import { cn } from '@/lib/utils';
 
 /**
@@ -276,11 +283,6 @@ const formatBytes = (bytes, decimals = 2) => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 };
 
-const isMarkdownFile = (filename, language) => {
-  if (language && language.toLowerCase() === 'markdown') return true;
-  return filename && (filename.toLowerCase().endsWith('.md') || filename.toLowerCase().endsWith('.mdx'));
-};
-
 // --- Components ---
 
 const LoadingSkeleton = () => (
@@ -456,24 +458,39 @@ const ShareButton = ({ url, title, description, compact = false }) => {
 
 // --- Main Application ---
 
+import type { GistData, HistoryItem, FeaturedGist } from '@/types';
+
 export default function GistLens() {
   // State
-  const [input, setInput] = useState('');
-  const [currentGistId, setCurrentGistId] = useState(null);
-  const [currentUsername, setCurrentUsername] = useState(null);
-  const [view, setView] = useState('home'); // 'home', 'gist', 'user'
-  const [gistData, setGistData] = useState(null);
-  const [userGists, setUserGists] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [activeFileIndex, setActiveFileIndex] = useState(0);
-  const [darkMode, setDarkMode] = useState(true);
-  const [history, setHistory] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Start minimized on homepage
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [featuredGists, setFeaturedGists] = useState(DEFAULT_FEATURED_GISTS);
-  const [loadingFeatured, setLoadingFeatured] = useState(false);
+  const [input, setInput] = useState<string>('');
+  const [currentGistId, setCurrentGistId] = useState<string | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+  const [view, setView] = useState<'home' | 'gist' | 'user'>('home');
+  const [gistData, setGistData] = useState<GistData | null>(null);
+  const [userGists, setUserGists] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeFileIndex, setActiveFileIndex] = useState<number>(0);
+  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [previewMode, setPreviewMode] = useState<boolean>(false);
+  const [featuredGists, setFeaturedGists] = useState<FeaturedGist[]>(DEFAULT_FEATURED_GISTS);
+  const [loadingFeatured, setLoadingFeatured] = useState<boolean>(false);
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [settings, setSettings] = useState<SettingsConfig>(() => {
+    const saved = localStorage.getItem('gistlens-settings');
+    return saved ? JSON.parse(saved) : {
+      autoPreviewMarkdown: true,
+      defaultTheme: 'dark',
+      showLineNumbers: true,
+      fontSize: 'medium',
+      enableSyntaxHighlighting: true,
+      autoLoadGists: true,
+      historyLimit: 10,
+    };
+  });
 
   // Handlers (defined early to avoid hoisting issues)
   const addToHistory = useCallback((data) => {
@@ -542,14 +559,33 @@ export default function GistLens() {
     }
   }, []);
 
-  // Fetch featured gists using smart algorithm
+  // Fetch featured gists using smart algorithm with variety on each visit
   const fetchFeaturedGists = useCallback(async () => {
     setLoadingFeatured(true);
     try {
-      // Fetch gists from multiple featured users
-      const randomUsers = [...FEATURED_USERS]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3); // Pick 3 random featured users
+      // Use timestamp-based randomization for variety on each visit
+      const seed = Date.now();
+      const shuffleWithSeed = (array, seedValue) => {
+        const arr = [...array];
+        let currentIndex = arr.length;
+        let randomValue = seedValue;
+        
+        // Simple seeded random function
+        const seededRandom = () => {
+          randomValue = (randomValue * 9301 + 49297) % 233280;
+          return randomValue / 233280;
+        };
+        
+        while (currentIndex !== 0) {
+          const randomIndex = Math.floor(seededRandom() * currentIndex);
+          currentIndex--;
+          [arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
+        }
+        return arr;
+      };
+      
+      // Fetch gists from multiple featured users - pick different users each time
+      const randomUsers = shuffleWithSeed(FEATURED_USERS, seed).slice(0, 4); // Pick 4 for more variety
       
       const gistPromises = randomUsers.map(user =>
         fetch(`https://api.github.com/users/${user}/gists?per_page=30`)
@@ -560,8 +596,11 @@ export default function GistLens() {
       const results = await Promise.all(gistPromises);
       const allGists = results.flat();
       
+      // Shuffle all gists for more variety
+      const shuffledGists = shuffleWithSeed(allGists, seed + 1000);
+      
       // Use smart algorithm to select best gists
-      const smartSelection = getSmartFeaturedGists(allGists);
+      const smartSelection = getSmartFeaturedGists(shuffledGists);
       
       // Convert to display format
       const featured = smartSelection.slice(0, 3).map((gist) => {
@@ -838,6 +877,27 @@ export default function GistLens() {
     localStorage.setItem('gistlens-history', JSON.stringify(newHistory));
   };
 
+  const handleSaveSettings = (newSettings: SettingsConfig) => {
+    setSettings(newSettings);
+    localStorage.setItem('gistlens-settings', JSON.stringify(newSettings));
+    
+    // Apply theme setting
+    if (newSettings.defaultTheme === 'light') {
+      setDarkMode(false);
+    } else if (newSettings.defaultTheme === 'dark') {
+      setDarkMode(true);
+    } else {
+      // System theme
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(systemDark);
+    }
+    
+    // Apply other settings
+    if (newSettings.autoPreviewMarkdown !== settings.autoPreviewMarkdown) {
+      setPreviewMode(newSettings.autoPreviewMarkdown);
+    }
+  };
+
   const files = gistData ? Object.values(gistData.files) : [];
   const activeFile = files[activeFileIndex];
 
@@ -870,24 +930,6 @@ export default function GistLens() {
                 <p>{sidebarOpen ? "Close sidebar" : "Open sidebar"} (Esc)</p>
               </TooltipContent>
             </Tooltip>
-          {view !== 'home' && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleBackToHome}
-                  className="hover:bg-primary/10 shrink-0"
-                >
-                  <Home className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Home</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Return to homepage (⌘H)</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group/logo" onClick={handleBackToHome}>
@@ -961,6 +1003,24 @@ export default function GistLens() {
             </TooltipTrigger>
             <TooltipContent>
               <p>Toggle theme (⌘D)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSettingsOpen(true)}
+                className="hover:bg-primary/10 relative overflow-hidden group shrink-0"
+                aria-label="Settings"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                <Settings className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Settings</p>
             </TooltipContent>
           </Tooltip>
           
@@ -1264,14 +1324,11 @@ export default function GistLens() {
                         "overflow-auto",
                         isFullscreen ? "h-[calc(100vh-140px)]" : "min-h-[400px] max-h-[70vh]"
                       )}>
-                        {previewMode && isMarkdownFile(file.filename, file.language) ? (
-                          <MarkdownRenderer content={file.content} darkMode={darkMode} />
-                        ) : (
-                          <CodeBlock 
-                            content={file.content} 
-                            language={file.language} 
-                          />
-                        )}
+                        <FileContentRenderer 
+                          file={file}
+                          previewMode={previewMode}
+                          darkMode={darkMode}
+                        />
                       </div>
                     </TabsContent>
                   ))}
@@ -1306,6 +1363,14 @@ export default function GistLens() {
         )}
       </div>
     </div>
+
+    {/* Settings Dialog */}
+    <SettingsDialog
+      isOpen={settingsOpen}
+      onClose={() => setSettingsOpen(false)}
+      settings={settings}
+      onSave={handleSaveSettings}
+    />
     </TooltipProvider>
   );
 }
@@ -1334,7 +1399,9 @@ const FileIcon = ({ filename }) => {
 
 const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPreviewMode, gistData }) => {
   const [copied, setCopied] = useState(false);
-  const isMarkdown = isMarkdownFile(file.filename, file.language);
+  const fileType = getFileType(file.filename, file.language);
+  const isMarkdown = fileType === 'markdown';
+  const isMediaFile = ['image', 'video', 'audio', 'pdf', 'data'].includes(fileType);
 
   const handleCopy = () => {
     const textArea = document.createElement("textarea");
@@ -1368,7 +1435,7 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
       <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <Terminal className="w-3.5 h-3.5" />
-          {file.language || 'Text'}
+          {isMediaFile ? fileType.charAt(0).toUpperCase() + fileType.slice(1) : (file.language || 'Text')}
         </span>
         <Separator orientation="vertical" className="h-4" />
         <span>{formatBytes(file.size)}</span>
@@ -1475,6 +1542,44 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
       </div>
     </div>
   );
+};
+
+// FileContentRenderer - Routes to appropriate viewer based on file type
+const FileContentRenderer = ({ file, previewMode, darkMode }) => {
+  const fileType = getFileType(file.filename, file.language);
+
+  // Markdown preview
+  if (previewMode && fileType === 'markdown') {
+    return <MarkdownRenderer content={file.content} darkMode={darkMode} />;
+  }
+
+  // Image viewer
+  if (fileType === 'image') {
+    return <ImageViewer file={file} />;
+  }
+
+  // Video player
+  if (fileType === 'video') {
+    return <VideoPlayer file={file} />;
+  }
+
+  // Audio player
+  if (fileType === 'audio') {
+    return <AudioPlayer file={file} />;
+  }
+
+  // Data viewer
+  if (fileType === 'data') {
+    return <DataViewer file={file} />;
+  }
+
+  // PDF viewer
+  if (fileType === 'pdf') {
+    return <PDFViewer file={file} />;
+  }
+
+  // Default to code block
+  return <CodeBlock content={file.content} language={file.language} />;
 };
 
 const CodeBlock = ({ content, language }) => {

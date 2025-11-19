@@ -20,6 +20,14 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 - ✨ **Gradient Effects** - Beautiful gradient accents throughout the UI
 - 🎭 **Smooth Animations** - Polished transitions and micro-interactions
 
+### 🎬 Rich Media Support
+- 🖼️ **Image Viewer** - Interactive pan, zoom, and rotate for PNG, JPG, GIF, WebP, SVG, and more
+- 🎥 **Video Player** - Full-featured HTML5 player for MP4, WebM, OGG, MOV formats
+- 🎵 **Audio Player** - Beautiful music player for MP3, WAV, FLAC, OGG, and other formats
+- 📊 **Data Viewers** - Sortable/searchable tables for CSV/TSV, tree view for JSON, formatted XML/YAML
+- 📄 **PDF Viewer** - Embedded PDF display with zoom and download
+- 🔄 **Auto-Detection** - Automatically selects the best viewer based on file type
+
 ### Enhanced Markdown Features
 - ✅ GitHub-flavored markdown (GFM)
 - 🧮 Math equations with KaTeX

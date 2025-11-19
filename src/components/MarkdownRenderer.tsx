@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
+interface MarkdownRendererProps {
+  content: string;
+  darkMode?: boolean;
+  className?: string;
+}
+
 /**
  * Enhanced Markdown Renderer with MDX support
  * Features:
@@ -10,9 +16,9 @@ import { cn } from '@/lib/utils';
  * - Auto-linked headings
  * - Tables, task lists, and more
  */
-export function MarkdownRenderer({ content, darkMode, className }) {
-  const [html, setHtml] = useState('');
-  const [isProcessing, setIsProcessing] = useState(true);
+export function MarkdownRenderer({ content, darkMode, className }: MarkdownRendererProps) {
+  const [html, setHtml] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState<boolean>(true);
 
   useEffect(() => {
     // Load KaTeX CSS
@@ -71,9 +77,10 @@ export function MarkdownRenderer({ content, darkMode, className }) {
         setHtml(String(result));
       } catch (error) {
         console.error('Markdown processing error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setHtml(`<div class="error-message">
           <p><strong>Error rendering markdown:</strong></p>
-          <p>${error.message}</p>
+          <p>${errorMessage}</p>
         </div>`);
       } finally {
         setIsProcessing(false);
