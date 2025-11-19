@@ -40,6 +40,12 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
+import { ImageViewer } from '@/components/ImageViewer';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { AudioPlayer } from '@/components/AudioPlayer';
+import { DataViewer } from '@/components/DataViewer';
+import { PDFViewer } from '@/components/PDFViewer';
+import { getFileType, isMarkdownFile } from '@/lib/fileTypes';
 import { cn } from '@/lib/utils';
 
 /**
@@ -274,11 +280,6 @@ const formatBytes = (bytes, decimals = 2) => {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-};
-
-const isMarkdownFile = (filename, language) => {
-  if (language && language.toLowerCase() === 'markdown') return true;
-  return filename && (filename.toLowerCase().endsWith('.md') || filename.toLowerCase().endsWith('.mdx'));
 };
 
 // --- Components ---
@@ -542,14 +543,33 @@ export default function GistLens() {
     }
   }, []);
 
-  // Fetch featured gists using smart algorithm
+  // Fetch featured gists using smart algorithm with variety on each visit
   const fetchFeaturedGists = useCallback(async () => {
     setLoadingFeatured(true);
     try {
-      // Fetch gists from multiple featured users
-      const randomUsers = [...FEATURED_USERS]
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3); // Pick 3 random featured users
+      // Use timestamp-based randomization for variety on each visit
+      const seed = Date.now();
+      const shuffleWithSeed = (array, seedValue) => {
+        const arr = [...array];
+        let currentIndex = arr.length;
+        let randomValue = seedValue;
+        
+        // Simple seeded random function
+        const seededRandom = () => {
+          randomValue = (randomValue * 9301 + 49297) % 233280;
+          return randomValue / 233280;
+        };
+        
+        while (currentIndex !== 0) {
+          const randomIndex = Math.floor(seededRandom() * currentIndex);
+          currentIndex--;
+          [arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
+        }
+        return arr;
+      };
+      
+      // Fetch gists from multiple featured users - pick different users each time
+      const randomUsers = shuffleWithSeed(FEATURED_USERS, seed).slice(0, 4); // Pick 4 for more variety
       
       const gistPromises = randomUsers.map(user =>
         fetch(`https://api.github.com/users/${user}/gists?per_page=30`)
@@ -560,8 +580,11 @@ export default function GistLens() {
       const results = await Promise.all(gistPromises);
       const allGists = results.flat();
       
+      // Shuffle all gists for more variety
+      const shuffledGists = shuffleWithSeed(allGists, seed + 1000);
+      
       // Use smart algorithm to select best gists
-      const smartSelection = getSmartFeaturedGists(allGists);
+      const smartSelection = getSmartFeaturedGists(shuffledGists);
       
       // Convert to display format
       const featured = smartSelection.slice(0, 3).map((gist) => {
@@ -1264,14 +1287,11 @@ export default function GistLens() {
                         "overflow-auto",
                         isFullscreen ? "h-[calc(100vh-140px)]" : "min-h-[400px] max-h-[70vh]"
                       )}>
-                        {previewMode && isMarkdownFile(file.filename, file.language) ? (
-                          <MarkdownRenderer content={file.content} darkMode={darkMode} />
-                        ) : (
-                          <CodeBlock 
-                            content={file.content} 
-                            language={file.language} 
-                          />
-                        )}
+                        <FileContentRenderer 
+                          file={file}
+                          previewMode={previewMode}
+                          darkMode={darkMode}
+                        />
                       </div>
                     </TabsContent>
                   ))}
@@ -1334,7 +1354,9 @@ const FileIcon = ({ filename }) => {
 
 const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPreviewMode, gistData }) => {
   const [copied, setCopied] = useState(false);
-  const isMarkdown = isMarkdownFile(file.filename, file.language);
+  const fileType = getFileType(file.filename, file.language);
+  const isMarkdown = fileType === 'markdown';
+  const isMediaFile = ['image', 'video', 'audio', 'pdf', 'data'].includes(fileType);
 
   const handleCopy = () => {
     const textArea = document.createElement("textarea");
@@ -1368,7 +1390,7 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
       <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <Terminal className="w-3.5 h-3.5" />
-          {file.language || 'Text'}
+          {isMediaFile ? fileType.charAt(0).toUpperCase() + fileType.slice(1) : (file.language || 'Text')}
         </span>
         <Separator orientation="vertical" className="h-4" />
         <span>{formatBytes(file.size)}</span>
@@ -1475,6 +1497,44 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
       </div>
     </div>
   );
+};
+
+// FileContentRenderer - Routes to appropriate viewer based on file type
+const FileContentRenderer = ({ file, previewMode, darkMode }) => {
+  const fileType = getFileType(file.filename, file.language);
+
+  // Markdown preview
+  if (previewMode && fileType === 'markdown') {
+    return <MarkdownRenderer content={file.content} darkMode={darkMode} />;
+  }
+
+  // Image viewer
+  if (fileType === 'image') {
+    return <ImageViewer file={file} />;
+  }
+
+  // Video player
+  if (fileType === 'video') {
+    return <VideoPlayer file={file} />;
+  }
+
+  // Audio player
+  if (fileType === 'audio') {
+    return <AudioPlayer file={file} />;
+  }
+
+  // Data viewer
+  if (fileType === 'data') {
+    return <DataViewer file={file} />;
+  }
+
+  // PDF viewer
+  if (fileType === 'pdf') {
+    return <PDFViewer file={file} />;
+  }
+
+  // Default to code block
+  return <CodeBlock content={file.content} language={file.language} />;
 };
 
 const CodeBlock = ({ content, language }) => {
