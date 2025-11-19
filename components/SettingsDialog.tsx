@@ -18,6 +18,7 @@ export interface SettingsConfig {
   wrapLongLines?: boolean;
   telemetryEnabled?: boolean;
   telemetryApiKey?: string;
+  iconSet?: 'lucide' | 'material' | 'minimal';
 }
 
 interface SettingsDialogProps {
@@ -63,6 +64,7 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
       wrapLongLines: false,
       telemetryEnabled: false,
       telemetryApiKey: '',
+      iconSet: 'lucide',
     };
     setLocalSettings(defaultSettings);
   };
@@ -132,6 +134,22 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
                   <option value="small">Small</option>
                   <option value="medium">Medium</option>
                   <option value="large">Large</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-medium text-sm">Icon Set</label>
+                  <p className="text-xs text-muted-foreground">Choose icon style for file types</p>
+                </div>
+                <select
+                  value={localSettings.iconSet || 'lucide'}
+                  onChange={(e) => setLocalSettings({ ...localSettings, iconSet: e.target.value as any })}
+                  className="px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="lucide">Lucide (Default)</option>
+                  <option value="material">Material Design</option>
+                  <option value="minimal">Minimal</option>
                 </select>
               </div>
             </div>

@@ -15,13 +15,16 @@ export const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'flac', 'm4a', 'aac
 // Data file extensions
 export const DATA_EXTENSIONS = ['csv', 'tsv', 'json', 'xml', 'yaml', 'yml', 'toml'] as const;
 
+// Graph/RDF file extensions
+export const GRAPH_EXTENSIONS = ['ttl', 'turtle', 'rdf', 'jsonld', 'n3', 'nt', 'nq', 'trig', 'owl'] as const;
+
 // PDF file extensions
 export const PDF_EXTENSIONS = ['pdf'] as const;
 
 // Markdown file extensions
 export const MARKDOWN_EXTENSIONS = ['md', 'mdx', 'markdown'] as const;
 
-export type FileType = 'markdown' | 'image' | 'video' | 'audio' | 'data' | 'pdf' | 'code';
+export type FileType = 'markdown' | 'image' | 'video' | 'audio' | 'data' | 'pdf' | 'code' | 'graph';
 
 // Get file extension from filename
 export const getFileExtension = (filename: string | undefined): string => {
@@ -67,12 +70,19 @@ export const isMarkdownFile = (filename: string, language?: string): boolean => 
   return MARKDOWN_EXTENSIONS.includes(ext as any);
 };
 
+// Check if file is a graph/RDF file
+export const isGraphFile = (filename: string): boolean => {
+  const ext = getFileExtension(filename);
+  return GRAPH_EXTENSIONS.includes(ext as any);
+};
+
 // Get file type category
 export const getFileType = (filename: string, language?: string): FileType => {
   if (isMarkdownFile(filename, language)) return 'markdown';
   if (isImageFile(filename)) return 'image';
   if (isVideoFile(filename)) return 'video';
   if (isAudioFile(filename)) return 'audio';
+  if (isGraphFile(filename)) return 'graph';
   if (isDataFile(filename)) return 'data';
   if (isPDFFile(filename)) return 'pdf';
   return 'code';
@@ -119,6 +129,17 @@ export const getMimeType = (filename: string): string => {
     xml: 'application/xml',
     yaml: 'application/x-yaml',
     yml: 'application/x-yaml',
+    
+    // Graph/RDF
+    ttl: 'text/turtle',
+    turtle: 'text/turtle',
+    rdf: 'application/rdf+xml',
+    jsonld: 'application/ld+json',
+    n3: 'text/n3',
+    nt: 'application/n-triples',
+    nq: 'application/n-quads',
+    trig: 'application/trig',
+    owl: 'application/owl+xml',
     
     // PDF
     pdf: 'application/pdf',

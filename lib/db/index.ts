@@ -131,7 +131,7 @@ export async function updateUserSettings(userId: string, settings: Record<string
     'telemetry_enabled', 'telemetry_api_key', 'auto_preview_markdown',
     'default_theme', 'show_line_numbers', 'font_size', 
     'enable_syntax_highlighting', 'auto_load_gists', 'history_limit',
-    'compact_mode', 'enable_animations', 'wrap_long_lines'
+    'compact_mode', 'enable_animations', 'wrap_long_lines', 'icon_set'
   ];
 
   for (const [key, value] of Object.entries(settings)) {

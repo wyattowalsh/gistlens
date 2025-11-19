@@ -25,8 +25,14 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 - 🎥 **Video Player** - Full-featured HTML5 player for MP4, WebM, OGG, MOV formats
 - 🎵 **Audio Player** - Beautiful music player for MP3, WAV, FLAC, OGG, and other formats
 - 📊 **Data Viewers** - Sortable/searchable tables for CSV/TSV, tree view for JSON, formatted XML/YAML
+- 🕸️ **Knowledge Graph Explorer** - Interactive 2D/3D visualization for RDF, Turtle, JSON-LD, N3 graphs
 - 📄 **PDF Viewer** - Embedded PDF display with zoom and download
 - 🔄 **Auto-Detection** - Automatically selects the best viewer based on file type
+
+### 🎨 Customization Features
+- 🎭 **Configurable Icon Sets** - Choose from multiple icon styles (Lucide, Material Design, Minimal)
+- 💾 **Intelligent Settings Persistence** - Automatic sync between server and local storage
+- 📊 **Advanced Telemetry** - Comprehensive usage tracking with PostHog (optional, privacy-focused)
 
 ### Enhanced Markdown Features
 - ✅ GitHub-flavored markdown (GFM)
@@ -36,6 +42,15 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 - ✓ Task lists
 - 💻 Enhanced code blocks with syntax highlighting
 - 🎨 Custom styling for blockquotes, lists, and more
+
+### Knowledge Graph Support
+- 🕸️ **Multiple Format Support** - TTL, Turtle, RDF/XML, JSON-LD, N3, N-Triples, N-Quads, TriG, OWL
+- 📐 **2D Visualization** - Interactive force-directed graph with pan/zoom
+- 🎲 **3D Visualization** - Immersive 3D graph exploration
+- 🔍 **Node & Edge Details** - Click to inspect graph elements
+- 📏 **Auto-Layout** - Intelligent force-directed positioning
+- 🎨 **Type-based Coloring** - Visual distinction between subjects, objects, and literals
+- 📤 **Export Support** - Download graph data in original format
 
 ## 🚀 Quick Start
 

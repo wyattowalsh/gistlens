@@ -231,6 +231,47 @@ class TelemetryService {
   trackCustomStylesheetReset(target: string) {
     this.track('custom_stylesheet_reset', { target });
   }
+
+  // Icon set events
+  trackIconSetChange(iconSet: string) {
+    this.track('icon_set_change', { icon_set: iconSet });
+  }
+
+  // Graph viewer events
+  trackGraphView(gistId: string, filename: string, graphFormat: string, nodeCount: number, edgeCount: number) {
+    this.track('graph_view', {
+      gist_id: gistId,
+      filename,
+      graph_format: graphFormat,
+      node_count: nodeCount,
+      edge_count: edgeCount,
+    });
+  }
+
+  trackGraphViewModeToggle(mode: '2d' | '3d') {
+    this.track('graph_view_mode_toggle', { mode });
+  }
+
+  trackGraphNodeClick(nodeId: string, nodeType: string) {
+    this.track('graph_node_click', { node_id: nodeId, node_type: nodeType });
+  }
+
+  trackGraphFullscreenToggle(enabled: boolean) {
+    this.track('graph_fullscreen_toggle', { enabled });
+  }
+
+  // Settings persistence events
+  trackSettingsSyncSuccess() {
+    this.track('settings_sync_success');
+  }
+
+  trackSettingsSyncFailure(error: string) {
+    this.track('settings_sync_failure', { error });
+  }
+
+  trackSettingsLoad(source: 'server' | 'localStorage') {
+    this.track('settings_load', { source });
+  }
 }
 
 // Export singleton instance
