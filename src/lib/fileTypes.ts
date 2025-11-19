@@ -4,69 +4,71 @@
  */
 
 // Image file extensions
-export const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'tif', 'avif', 'heic', 'heif'];
+export const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'tif', 'avif', 'heic', 'heif'] as const;
 
 // Video file extensions
-export const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'avi', 'wmv', 'flv', 'mkv', 'm4v'];
+export const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'avi', 'wmv', 'flv', 'mkv', 'm4v'] as const;
 
 // Audio file extensions
-export const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'flac', 'm4a', 'aac', 'wma', 'opus', 'webm'];
+export const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'flac', 'm4a', 'aac', 'wma', 'opus', 'webm'] as const;
 
 // Data file extensions
-export const DATA_EXTENSIONS = ['csv', 'tsv', 'json', 'xml', 'yaml', 'yml', 'toml'];
+export const DATA_EXTENSIONS = ['csv', 'tsv', 'json', 'xml', 'yaml', 'yml', 'toml'] as const;
 
 // PDF file extensions
-export const PDF_EXTENSIONS = ['pdf'];
+export const PDF_EXTENSIONS = ['pdf'] as const;
 
 // Markdown file extensions
-export const MARKDOWN_EXTENSIONS = ['md', 'mdx', 'markdown'];
+export const MARKDOWN_EXTENSIONS = ['md', 'mdx', 'markdown'] as const;
+
+export type FileType = 'markdown' | 'image' | 'video' | 'audio' | 'data' | 'pdf' | 'code';
 
 // Get file extension from filename
-export const getFileExtension = (filename) => {
+export const getFileExtension = (filename: string | undefined): string => {
   if (!filename) return '';
   const parts = filename.split('.');
-  return parts.length > 1 ? parts.pop().toLowerCase() : '';
+  return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
 };
 
 // Check if file is an image
-export const isImageFile = (filename) => {
+export const isImageFile = (filename: string): boolean => {
   const ext = getFileExtension(filename);
-  return IMAGE_EXTENSIONS.includes(ext);
+  return IMAGE_EXTENSIONS.includes(ext as any);
 };
 
 // Check if file is a video
-export const isVideoFile = (filename) => {
+export const isVideoFile = (filename: string): boolean => {
   const ext = getFileExtension(filename);
-  return VIDEO_EXTENSIONS.includes(ext);
+  return VIDEO_EXTENSIONS.includes(ext as any);
 };
 
 // Check if file is audio
-export const isAudioFile = (filename) => {
+export const isAudioFile = (filename: string): boolean => {
   const ext = getFileExtension(filename);
-  return AUDIO_EXTENSIONS.includes(ext);
+  return AUDIO_EXTENSIONS.includes(ext as any);
 };
 
 // Check if file is a data file
-export const isDataFile = (filename) => {
+export const isDataFile = (filename: string): boolean => {
   const ext = getFileExtension(filename);
-  return DATA_EXTENSIONS.includes(ext);
+  return DATA_EXTENSIONS.includes(ext as any);
 };
 
 // Check if file is PDF
-export const isPDFFile = (filename) => {
+export const isPDFFile = (filename: string): boolean => {
   const ext = getFileExtension(filename);
-  return PDF_EXTENSIONS.includes(ext);
+  return PDF_EXTENSIONS.includes(ext as any);
 };
 
 // Check if file is markdown
-export const isMarkdownFile = (filename, language) => {
+export const isMarkdownFile = (filename: string, language?: string): boolean => {
   if (language && language.toLowerCase() === 'markdown') return true;
   const ext = getFileExtension(filename);
-  return MARKDOWN_EXTENSIONS.includes(ext);
+  return MARKDOWN_EXTENSIONS.includes(ext as any);
 };
 
 // Get file type category
-export const getFileType = (filename, language) => {
+export const getFileType = (filename: string, language?: string): FileType => {
   if (isMarkdownFile(filename, language)) return 'markdown';
   if (isImageFile(filename)) return 'image';
   if (isVideoFile(filename)) return 'video';
@@ -77,7 +79,7 @@ export const getFileType = (filename, language) => {
 };
 
 // Get MIME type from extension
-export const getMimeType = (filename) => {
+export const getMimeType = (filename: string): string => {
   const ext = getFileExtension(filename);
   
   const mimeTypes = {
@@ -120,7 +122,7 @@ export const getMimeType = (filename) => {
     
     // PDF
     pdf: 'application/pdf',
-  };
+  } as const;
   
-  return mimeTypes[ext] || 'text/plain';
+  return mimeTypes[ext as keyof typeof mimeTypes] || 'text/plain';
 };
