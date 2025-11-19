@@ -1,28 +1,23 @@
 # Configure Your Supabase Project
 
-Thank you for providing your Supabase project details! To complete the integration, you need to get your **Supabase URL** and **Anon Key** instead of the PostgreSQL connection string.
+Your Supabase project has been configured! ✅
 
-## 🔑 Getting Your Credentials
+## 🔑 Your Credentials (Configured)
 
-Based on your connection string, your Supabase project reference is: `xltcajzbndxnbuaoeigc`
+Your Supabase project reference is: `bgnptdxskntypobizwiv`
 
-### Step 1: Get Your Supabase URL and Anon Key
+**Credentials configured:**
+- **Project URL**: `https://bgnptdxskntypobizwiv.supabase.co`
+- **Anon Key**: Configured in `.env.local`
 
-1. Go to your Supabase Dashboard: https://app.supabase.com/project/xltcajzbndxnbuaoeigc
-2. Click on **Settings** (gear icon in the sidebar)
-3. Click on **API** in the settings menu
-4. Copy the following values:
-   - **Project URL**: `https://xltcajzbndxnbuaoeigc.supabase.co`
-   - **Project API keys** → **anon/public key**: (long string starting with `eyJ...`)
+### ✅ Step 1: Environment Variables (COMPLETED)
 
-### Step 2: Update Your `.env.local` File
-
-Create or update `.env.local` in your project root:
+Your `.env.local` file has been created with your Supabase credentials:
 
 ```env
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL="https://xltcajzbndxnbuaoeigc.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
+NEXT_PUBLIC_SUPABASE_URL="https://bgnptdxskntypobizwiv.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnbnB0ZHhza250eXBvYml6d2l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1Nzk5NDksImV4cCI6MjA3OTE1NTk0OX0.iZS9Q6b2jxKDQ20xXly7aYN1TmVFfrXnZe65qcklucw"
 
 # Auth.js (NextAuth.js v5)
 NEXTAUTH_URL="http://localhost:3000"
@@ -41,13 +36,13 @@ NEXT_PUBLIC_POSTHOG_HOST="https://app.posthog.com"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-### Step 3: Run Database Migrations
+### ⏳ Step 2: Run Database Migrations (NEXT STEP)
 
 You need to run the database schema migration to set up the tables and Row Level Security policies.
 
-#### Option A: Using Supabase Dashboard (Easiest)
+#### Option A: Using Supabase Dashboard (Recommended)
 
-1. Go to https://app.supabase.com/project/xltcajzbndxnbuaoeigc/editor
+1. Go to https://app.supabase.com/project/bgnptdxskntypobizwiv/editor
 2. Click **SQL Editor** in the sidebar
 3. Click **New Query**
 4. Copy the entire contents of `supabase/migrations/20250119000000_initial_schema.sql`
@@ -64,28 +59,28 @@ npm install -g supabase
 supabase login
 
 # Link your project
-supabase link --project-ref xltcajzbndxnbuaoeigc
+supabase link --project-ref bgnptdxskntypobizwiv
 
 # Push migrations
 supabase db push
 ```
 
-### Step 4: Verify Setup
+### Step 3: Verify Setup
 
 After running migrations, verify the tables were created:
 
-1. Go to https://app.supabase.com/project/xltcajzbndxnbuaoeigc/editor
+1. Go to https://app.supabase.com/project/bgnptdxskntypobizwiv/editor
 2. Click **Table Editor** in the sidebar
 3. You should see tables: `users`, `sessions`, `accounts`, `gist_history`, `user_settings`, `custom_styles`, `verification_tokens`
 
-### Step 5: Enable Real-time (Optional)
+### Step 4: Enable Real-time (Optional)
 
 For real-time features to work:
 
-1. Go to https://app.supabase.com/project/xltcajzbndxnbuaoeigc/database/replication
+1. Go to https://app.supabase.com/project/bgnptdxskntypobizwiv/database/replication
 2. Enable replication for the `gist_history` table (it should already be enabled by the migration)
 
-### Step 6: Start Development
+### Step 5: Start Development
 
 ```bash
 # Install dependencies
