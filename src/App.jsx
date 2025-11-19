@@ -284,35 +284,49 @@ const isMarkdownFile = (filename, language) => {
 // --- Components ---
 
 const LoadingSkeleton = () => (
-  <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-pulse">
+  <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+    {/* Animated Loading Indicator */}
+    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground animate-pulse">Loading gist...</p>
+    </div>
     {/* Header Skeleton */}
-    <div className="p-6 md:p-8 rounded-2xl border bg-card">
+    <div className="p-6 md:p-8 rounded-2xl border bg-card animate-pulse">
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-xl bg-muted"></div>
+        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-muted to-muted/50"></div>
         <div className="flex-1 space-y-3">
-          <div className="h-8 bg-muted rounded w-3/4"></div>
-          <div className="h-4 bg-muted rounded w-1/2"></div>
+          <div className="h-8 bg-gradient-to-r from-muted to-muted/50 rounded w-3/4"></div>
+          <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-1/2"></div>
         </div>
       </div>
     </div>
     {/* Content Skeleton */}
-    <div className="rounded-2xl border bg-card p-6 space-y-4">
-      <div className="h-4 bg-muted rounded w-full"></div>
-      <div className="h-4 bg-muted rounded w-5/6"></div>
-      <div className="h-4 bg-muted rounded w-4/6"></div>
+    <div className="rounded-2xl border bg-card p-6 space-y-4 animate-pulse">
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-full"></div>
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-5/6"></div>
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-4/6"></div>
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-3/4"></div>
     </div>
   </div>
 );
 
 const ErrorDisplay = ({ message, onRetry }) => (
-  <div className="flex flex-col items-center justify-center p-8 text-center bg-destructive/10 rounded-xl border border-destructive/20 mx-4 backdrop-blur-sm">
-    <div className="bg-destructive/10 p-4 rounded-full mb-4">
-      <AlertCircle className="w-8 h-8 text-destructive" />
+  <div className="flex flex-col items-center justify-center p-8 text-center bg-destructive/10 rounded-xl border border-destructive/20 mx-4 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div className="relative mb-4">
+      <div className="absolute inset-0 bg-destructive/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="relative bg-destructive/10 p-4 rounded-full">
+        <AlertCircle className="w-8 h-8 text-destructive animate-pulse" />
+      </div>
     </div>
     <h3 className="text-xl font-bold mb-2">Failed to Load Gist</h3>
     <p className="text-muted-foreground mb-6 max-w-md">{message}</p>
-    <Button onClick={onRetry} variant="destructive" className="shadow-lg">
-      <Zap className="w-4 h-4 mr-2" />
+    <Button onClick={onRetry} variant="destructive" className="shadow-lg hover:scale-105 transition-transform group">
+      <Zap className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
       Try Again
     </Button>
   </div>
@@ -876,14 +890,18 @@ export default function GistLens() {
           )}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={handleBackToHome}>
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group/logo" onClick={handleBackToHome}>
                 <div className="relative shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-75"></div>
-                  <div className="relative p-2 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl">
-                    <Code2 className="w-5 h-5 text-white" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-50 group-hover/logo:opacity-75 transition-opacity"></div>
+                  <div className="relative p-1.5 sm:p-2 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl group-hover/logo:scale-105 transition-transform">
+                    <img 
+                      src="/icon.svg" 
+                      alt="GistLens Logo" 
+                      className="w-5 h-5 sm:w-6 sm:h-6"
+                    />
                   </div>
                 </div>
-                <span className="hidden sm:inline text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                <span className="hidden sm:inline text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent group-hover/logo:scale-105 transition-transform">
                   GistLens
                 </span>
               </div>
@@ -1138,14 +1156,14 @@ export default function GistLens() {
                         <Button 
                           variant="outline"
                           asChild
-                          className="shadow-sm hover:shadow-md transition-shadow text-xs sm:text-sm"
+                          className="shadow-sm hover:shadow-md transition-all hover:scale-105 text-xs sm:text-sm group"
                         >
                           <a 
                             href={gistData.html_url}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 group-hover:rotate-12 transition-transform" />
                             <span className="hidden sm:inline">Open in GitHub</span>
                             <span className="sm:hidden">GitHub</span>
                           </a>
@@ -1155,10 +1173,39 @@ export default function GistLens() {
                         <p>Open in GitHub</p>
                       </TooltipContent>
                     </Tooltip>
-                    <div className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-mono rounded-lg border bg-muted/50 flex items-center gap-1.5 sm:gap-2">
-                      <FileCode className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                      {Object.keys(gistData.files).length} File(s)
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-mono rounded-lg border bg-primary/5 border-primary/20 flex items-center gap-1.5 sm:gap-2 hover:bg-primary/10 transition-colors cursor-help">
+                          <FileCode className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                          {Object.keys(gistData.files).length} File{Object.keys(gistData.files).length !== 1 ? 's' : ''}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Number of files in this gist</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    {gistData.public !== undefined && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-mono rounded-lg border bg-muted/50 flex items-center gap-1.5 cursor-help">
+                            {gistData.public ? (
+                              <>
+                                <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                                <span className="hidden sm:inline">Public</span>
+                              </>
+                            ) : (
+                              <>
+                                <X className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                                <span className="hidden sm:inline">Private</span>
+                              </>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This gist is {gistData.public ? 'publicly' : 'privately'} visible</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1234,6 +1281,29 @@ export default function GistLens() {
             </div>
           ) : null}
         </main>
+
+        {/* Back to Top Button */}
+        {(view === 'gist' || view === 'user') && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="default"
+                size="icon"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className={cn(
+                  "fixed bottom-6 right-6 z-40 rounded-full shadow-2xl",
+                  "hover:scale-110 transition-all duration-300",
+                  "bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
+                )}
+              >
+                <ChevronRight className="w-5 h-5 rotate-[-90deg]" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Back to top</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </div>
     </TooltipProvider>
@@ -1410,6 +1480,8 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
 const CodeBlock = ({ content, language }) => {
   const langClass = language ? `language-${language.toLowerCase()}` : 'language-text';
   const codeRef = useRef(null);
+  const [showLineNumbers, setShowLineNumbers] = useState(true);
+  const lines = content.split('\n');
 
   useEffect(() => {
     if (codeRef.current && window.Prism) {
@@ -1418,21 +1490,47 @@ const CodeBlock = ({ content, language }) => {
   }, [content, language]);
 
   return (
-    <div className="text-xs sm:text-sm font-mono leading-relaxed p-4 sm:p-6 bg-muted/20 overflow-x-auto">
-      <pre 
-        className={cn(
-          langClass,
-          "!m-0 !p-0 !bg-transparent !shadow-none !border-0"
+    <div className="relative group">
+      {/* Line Numbers Toggle */}
+      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowLineNumbers(!showLineNumbers)}
+          className="h-7 text-xs bg-muted/90 backdrop-blur-sm"
+        >
+          <Terminal className="w-3 h-3 mr-1.5" />
+          {showLineNumbers ? 'Hide' : 'Show'} Lines
+        </Button>
+      </div>
+      
+      <div className="flex text-xs sm:text-sm font-mono leading-relaxed bg-muted/20 overflow-x-auto">
+        {showLineNumbers && (
+          <div className="select-none py-4 pl-4 pr-3 bg-muted/30 border-r border-border/50 text-muted-foreground/50">
+            {lines.map((_, idx) => (
+              <div key={idx} className="text-right leading-relaxed">
+                {idx + 1}
+              </div>
+            ))}
+          </div>
         )}
-        style={{ 
-          fontFamily: '"Fira Code", "JetBrains Mono", Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
-          tabSize: 4 
-        }}
-      >
-        <code ref={codeRef} className={langClass}>
-          {content}
-        </code>
-      </pre>
+        <div className="flex-1 p-4 sm:p-6">
+          <pre 
+            className={cn(
+              langClass,
+              "!m-0 !p-0 !bg-transparent !shadow-none !border-0"
+            )}
+            style={{ 
+              fontFamily: '"Fira Code", "JetBrains Mono", Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+              tabSize: 4 
+            }}
+          >
+            <code ref={codeRef} className={langClass}>
+              {content}
+            </code>
+          </pre>
+        </div>
+      </div>
     </div>
   );
 };
