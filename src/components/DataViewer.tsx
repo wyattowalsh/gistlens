@@ -4,20 +4,34 @@ import { JsonViewer } from '@textea/json-viewer';
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { GistFile } from '@/types';
+
+interface DataViewerProps {
+  file: GistFile;
+  className?: string;
+}
+
+type DataType = 'json' | 'table' | 'xml' | 'yaml';
+
+interface ParsedData {
+  type: DataType;
+  content: any;
+  fields?: string[];
+}
 
 /**
  * DataViewer Component
  * Displays data files (CSV, TSV, JSON, XML) with sorting, filtering, and search
  */
-export function DataViewer({ file, className }) {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortColumn, setSortColumn] = useState(null);
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [isLoading, setIsLoading] = useState(true);
+export function DataViewer({ file, className }: DataViewerProps) {
+  const [data, setData] = useState<ParsedData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fileExtension = file.filename.split('.').pop().toLowerCase();
+  const fileExtension = file.filename.split('.').pop()?.toLowerCase() || '';
 
   useEffect(() => {
     parseData();
@@ -65,12 +79,13 @@ export function DataViewer({ file, className }) {
       }
       setIsLoading(false);
     } catch (err) {
-      setError('Failed to parse file: ' + err.message);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError('Failed to parse file: ' + errorMessage);
       setIsLoading(false);
     }
   };
 
-  const handleSort = (column) => {
+  const handleSort = (column: string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -82,12 +97,12 @@ export function DataViewer({ file, className }) {
   const filteredAndSortedData = useMemo(() => {
     if (!data || data.type !== 'table') return [];
 
-    let filtered = data.content;
+    let filtered: any[] = data.content;
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(row =>
-        Object.values(row).some(val =>
+      filtered = filtered.filter((row: any) =>
+        Object.values(row).some((val: any) =>
           String(val).toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
@@ -95,7 +110,7 @@ export function DataViewer({ file, className }) {
 
     // Apply sorting
     if (sortColumn) {
-      filtered = [...filtered].sort((a, b) => {
+      filtered = [...filtered].sort((a: any, b: any) => {
         const aVal = a[sortColumn];
         const bVal = b[sortColumn];
         
