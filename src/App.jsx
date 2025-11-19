@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Search, 
   Moon, 
@@ -21,7 +21,14 @@ import {
   FileText,
   Star,
   Sparkles,
-  Zap
+  Zap,
+  Home,
+  User,
+  TrendingUp,
+  ChevronRight,
+  Rocket,
+  BookOpen,
+  Lightbulb
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -47,13 +54,48 @@ import { cn } from '@/lib/utils';
 
 // --- Utility Functions ---
 
-const DEFAULT_GIST_ID = 'bb3bbe2ecc3dd810a14942e66fb87094';
+// Featured/awesome gists for the homepage
+const FEATURED_GISTS = [
+  {
+    id: 'bb3bbe2ecc3dd810a14942e66fb87094',
+    title: 'React Hooks Cheatsheet',
+    description: 'Comprehensive guide to React Hooks with examples',
+    category: 'Tutorial',
+    icon: BookOpen,
+  },
+  {
+    id: '4e83c70abf3fe294bbdf',
+    title: 'CSS Grid Layout Guide',
+    description: 'Modern CSS Grid techniques and patterns',
+    category: 'Tutorial',
+    icon: Lightbulb,
+  },
+  {
+    id: 'a2a8e8e6d7f1a3b2c4d5',
+    title: 'JavaScript Tips & Tricks',
+    description: 'Useful JavaScript snippets and best practices',
+    category: 'Code',
+    icon: Sparkles,
+  },
+];
 
-const parseGistId = (input) => {
+const parseInput = (input) => {
   if (!input) return null;
-  const urlMatch = input.match(/gist\.github\.com\/(?:[^/]+\/)?([a-f0-9]+)/i);
-  if (urlMatch) return urlMatch[1];
-  if (/^[a-f0-9]+$/i.test(input)) return input;
+  
+  // Try to parse as gist URL (with ID)
+  const gistUrlMatch = input.match(/gist\.github\.com\/(?:[^/]+\/)?([a-f0-9]+)/i);
+  if (gistUrlMatch) return { type: 'gist', value: gistUrlMatch[1] };
+  
+  // Try to parse as user URL (https://gist.github.com/username)
+  const userUrlMatch = input.match(/gist\.github\.com\/([^/]+)\/?$/i);
+  if (userUrlMatch) return { type: 'user', value: userUrlMatch[1] };
+  
+  // Try to parse as just gist ID (hex string)
+  if (/^[a-f0-9]+$/i.test(input)) return { type: 'gist', value: input };
+  
+  // Assume it's a username if it's alphanumeric with hyphens/underscores
+  if (/^[a-z0-9_-]+$/i.test(input)) return { type: 'user', value: input };
+  
   return null;
 };
 
@@ -102,9 +144,12 @@ const ErrorDisplay = ({ message, onRetry }) => (
 export default function GistLens() {
   // State
   const [input, setInput] = useState('');
-  const [currentGistId, setCurrentGistId] = useState(DEFAULT_GIST_ID);
+  const [currentGistId, setCurrentGistId] = useState(null);
+  const [currentUsername, setCurrentUsername] = useState(null);
+  const [view, setView] = useState('home'); // 'home', 'gist', 'user'
   const [gistData, setGistData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [userGists, setUserGists] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [darkMode, setDarkMode] = useState(true);
@@ -112,6 +157,73 @@ export default function GistLens() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+
+  // Handlers (defined early to avoid hoisting issues)
+  const addToHistory = useCallback((data) => {
+    setHistory(prev => {
+      const newEntry = {
+        id: data.id,
+        description: data.description || 'No description',
+        owner: data.owner?.login || 'Anonymous',
+        avatar: data.owner?.avatar_url,
+        files: Object.keys(data.files).length,
+        date: new Date().toISOString()
+      };
+      const filtered = prev.filter(h => h.id !== data.id);
+      const updated = [newEntry, ...filtered].slice(0, 10);
+      localStorage.setItem('gistlens-history', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const fetchGist = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+    setActiveFileIndex(0);
+    
+    try {
+      const response = await fetch(`https://api.github.com/gists/${id}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('Gist not found. Check the ID or URL.');
+        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+        throw new Error('Failed to fetch Gist data.');
+      }
+
+      const data = await response.json();
+      setGistData(data);
+      addToHistory(data);
+      setInput(`https://gist.github.com/${data.owner?.login || 'anonymous'}/${data.id}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [addToHistory]);
+
+  const fetchUserGists = useCallback(async (username) => {
+    setLoading(true);
+    setError(null);
+    setUserGists([]);
+    
+    try {
+      const response = await fetch(`https://api.github.com/users/${username}/gists`);
+      
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('User not found. Check the username.');
+        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+        throw new Error('Failed to fetch user gists.');
+      }
+
+      const data = await response.json();
+      setUserGists(data);
+      setInput(`https://gist.github.com/${username}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Effects
   useEffect(() => {
@@ -158,9 +270,16 @@ export default function GistLens() {
   }, [darkMode]);
 
   useEffect(() => {
-    fetchGist(currentGistId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentGistId]);
+    if (currentGistId && view === 'gist') {
+      fetchGist(currentGistId);
+    }
+  }, [currentGistId, view, fetchGist]);
+
+  useEffect(() => {
+    if (currentUsername && view === 'user') {
+      fetchUserGists(currentUsername);
+    }
+  }, [currentUsername, view, fetchUserGists]);
 
   useEffect(() => {
     // Reset preview mode when switching files or gists
@@ -197,62 +316,51 @@ export default function GistLens() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [previewMode, gistData, activeFileIndex]);
 
-  // Handlers
-  const fetchGist = async (id) => {
-    setLoading(true);
-    setError(null);
-    setActiveFileIndex(0);
-    
-    try {
-      const response = await fetch(`https://api.github.com/gists/${id}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) throw new Error('Gist not found. Check the ID or URL.');
-        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
-        throw new Error('Failed to fetch Gist data.');
-      }
-
-      const data = await response.json();
-      setGistData(data);
-      addToHistory(data);
-      setInput(`https://gist.github.com/${data.owner?.login || 'anonymous'}/${data.id}`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addToHistory = (data) => {
-    setHistory(prev => {
-      const newEntry = {
-        id: data.id,
-        description: data.description || 'No description',
-        owner: data.owner?.login || 'Anonymous',
-        avatar: data.owner?.avatar_url,
-        files: Object.keys(data.files).length,
-        date: new Date().toISOString()
-      };
-      const filtered = prev.filter(h => h.id !== data.id);
-      const updated = [newEntry, ...filtered].slice(0, 10);
-      localStorage.setItem('gistlens-history', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    const id = parseGistId(input);
-    if (id) {
-      setCurrentGistId(id);
+    const parsed = parseInput(input);
+    if (parsed) {
+      if (parsed.type === 'gist') {
+        setCurrentGistId(parsed.value);
+        setCurrentUsername(null);
+        setView('gist');
+      } else if (parsed.type === 'user') {
+        setCurrentUsername(parsed.value);
+        setCurrentGistId(null);
+        setView('user');
+      }
       if (window.innerWidth < 1024) setSidebarOpen(false);
     } else {
-      setError('Invalid Gist URL or ID format.');
+      setError('Invalid input. Enter a gist ID, gist URL, username, or user URL.');
     }
+  };
+
+  const handleFeaturedGistClick = (gistId) => {
+    setCurrentGistId(gistId);
+    setCurrentUsername(null);
+    setView('gist');
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+  };
+
+  const handleUserGistClick = (gistId) => {
+    setCurrentGistId(gistId);
+    setView('gist');
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+  };
+
+  const handleBackToHome = () => {
+    setView('home');
+    setCurrentGistId(null);
+    setCurrentUsername(null);
+    setGistData(null);
+    setUserGists([]);
+    setError(null);
   };
 
   const handleHistoryClick = (id) => {
     setCurrentGistId(id);
+    setCurrentUsername(null);
+    setView('gist');
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
@@ -286,7 +394,18 @@ export default function GistLens() {
           >
             <Menu className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-3">
+          {view !== 'home' && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleBackToHome}
+              className="hover:bg-primary/10"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Home</span>
+            </Button>
+          )}
+          <div className="flex items-center gap-3 cursor-pointer" onClick={handleBackToHome}>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-75"></div>
               <div className="relative p-2 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl">
@@ -306,7 +425,7 @@ export default function GistLens() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste GitHub Gist URL or ID..."
+              placeholder="Paste Gist URL/ID, Username, or User URL..."
               className={cn(
                 "w-full pl-10 pr-20 py-2.5 rounded-xl text-sm font-medium",
                 "bg-muted/50 border border-border",
@@ -448,12 +567,25 @@ export default function GistLens() {
 
         {/* --- Main Content --- */}
         <main className="flex-1 overflow-y-auto relative">
-          {loading ? (
+          {view === 'home' ? (
+            <HomePage 
+              onFeaturedGistClick={handleFeaturedGistClick}
+            />
+          ) : loading ? (
             <LoadingSpinner />
           ) : error ? (
             <div className="flex items-center justify-center h-full p-4">
-              <ErrorDisplay message={error} onRetry={() => fetchGist(currentGistId)} />
+              <ErrorDisplay 
+                message={error} 
+                onRetry={() => view === 'gist' ? fetchGist(currentGistId) : fetchUserGists(currentUsername)} 
+              />
             </div>
+          ) : view === 'user' && userGists.length > 0 ? (
+            <UserGistsView 
+              username={currentUsername}
+              gists={userGists}
+              onGistClick={handleUserGistClick}
+            />
           ) : gistData ? (
             <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
               
@@ -749,6 +881,251 @@ const CodeBlock = ({ content, language }) => {
           {content}
         </code>
       </pre>
+    </div>
+  );
+};
+
+// --- HomePage Component ---
+const HomePage = ({ onFeaturedGistClick }) => {
+  return (
+    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-12">
+      {/* Hero Section */}
+      <div className="text-center space-y-6 py-12 md:py-20">
+        <div className="relative inline-block">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-3xl opacity-30 animate-pulse"></div>
+          <h1 className="relative text-5xl md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+            GistLens
+          </h1>
+        </div>
+        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          Beautiful GitHub Gist Viewer with Enhanced Features
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-6">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+            <Rocket className="w-5 h-5 text-primary" />
+            <span className="text-sm font-medium">Modern UI</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <span className="text-sm font-medium">Syntax Highlighting</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <span className="text-sm font-medium">Markdown Preview</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Grid */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <FeatureCard
+          icon={FileCode}
+          title="View Any Gist"
+          description="Paste a gist URL or ID to view beautifully rendered code with syntax highlighting"
+          gradient="from-blue-500 to-cyan-500"
+        />
+        <FeatureCard
+          icon={User}
+          title="Browse User Gists"
+          description="Enter a username to explore all public gists from any GitHub user"
+          gradient="from-purple-500 to-pink-500"
+        />
+        <FeatureCard
+          icon={TrendingUp}
+          title="Featured Gists"
+          description="Discover awesome gists curated for learning and inspiration"
+          gradient="from-orange-500 to-red-500"
+        />
+      </div>
+
+      {/* Featured Gists Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold flex items-center gap-3">
+            <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
+            Featured Gists
+          </h2>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {FEATURED_GISTS.map((gist) => (
+            <FeaturedGistCard
+              key={gist.id}
+              gist={gist}
+              onClick={() => onFeaturedGistClick(gist.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* How to Use Section */}
+      <div className="bg-gradient-to-br from-card via-card to-muted/20 rounded-2xl border p-8 md:p-12 space-y-6">
+        <h2 className="text-3xl font-bold flex items-center gap-3">
+          <Lightbulb className="w-8 h-8 text-yellow-500" />
+          How to Use
+        </h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          <HowToCard
+            number="1"
+            title="View a Specific Gist"
+            description="Paste a gist URL (e.g., https://gist.github.com/user/abc123) or just the ID"
+          />
+          <HowToCard
+            number="2"
+            title="Browse User Gists"
+            description="Enter a username (e.g., 'wyattowalsh') or user URL to see all their public gists"
+          />
+          <HowToCard
+            number="3"
+            title="Explore Features"
+            description="Use tabs for multi-file gists, toggle preview for markdown, and download files"
+          />
+          <HowToCard
+            number="4"
+            title="Customize Experience"
+            description="Switch between dark/light mode and access your viewing history in the sidebar"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FeatureCard = ({ icon: Icon, title, description, gradient }) => (
+  <div className="group relative p-6 rounded-2xl border bg-card hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+    <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity", gradient)}></div>
+    <div className="relative space-y-3">
+      <div className={cn("w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center", gradient)}>
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+      <h3 className="text-xl font-bold">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  </div>
+);
+
+const FeaturedGistCard = ({ gist, onClick }) => {
+  const Icon = gist.icon;
+  return (
+    <div
+      onClick={onClick}
+      className="group relative p-6 rounded-2xl border bg-card cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div className="relative space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="p-3 rounded-xl bg-primary/10">
+            <Icon className="w-6 h-6 text-primary" />
+          </div>
+          <div className="px-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary">
+            {gist.category}
+          </div>
+        </div>
+        <div>
+          <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">
+            {gist.title}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {gist.description}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-primary font-medium">
+          <span>View Gist</span>
+          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HowToCard = ({ number, title, description }) => (
+  <div className="flex gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+      {number}
+    </div>
+    <div className="space-y-1">
+      <h4 className="font-bold">{title}</h4>
+      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  </div>
+);
+
+// --- UserGistsView Component ---
+const UserGistsView = ({ username, gists, onGistClick }) => {
+  return (
+    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+      {/* User Header */}
+      <div className="p-6 md:p-8 rounded-2xl border shadow-lg bg-gradient-to-br from-card via-card to-muted/20">
+        <div className="flex items-center gap-4 mb-6">
+          {gists[0]?.owner?.avatar_url && (
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-xl blur-md opacity-50"></div>
+              <img
+                src={gists[0].owner.avatar_url}
+                alt={username}
+                className="relative w-16 h-16 rounded-xl shadow-lg ring-2 ring-background"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold mb-1 flex items-center gap-2">
+              <User className="w-7 h-7 text-primary" />
+              {username}
+            </h1>
+            <p className="text-muted-foreground">
+              {gists.length} Public Gist{gists.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Gists Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {gists.map((gist) => (
+          <UserGistCard key={gist.id} gist={gist} onClick={() => onGistClick(gist.id)} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const UserGistCard = ({ gist, onClick }) => {
+  const files = Object.values(gist.files);
+  const fileCount = files.length;
+  const firstFile = files[0];
+
+  return (
+    <div
+      onClick={onClick}
+      className="group p-5 rounded-xl border bg-card cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+    >
+      <div className="space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <FileCode className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+              {firstFile?.filename || 'Untitled'}
+            </h3>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+        </div>
+        
+        {gist.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+            {gist.description}
+          </p>
+        )}
+
+        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+          <span className="flex items-center gap-1">
+            <FileCode className="w-3 h-3" />
+            {fileCount} file{fileCount !== 1 ? 's' : ''}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {new Date(gist.updated_at).toLocaleDateString()}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
