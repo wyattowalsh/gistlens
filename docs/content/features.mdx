@@ -1,0 +1,253 @@
+# Features
+
+GistLens provides a comprehensive set of features for viewing, managing, and interacting with GitHub gists.
+
+## Telemetry System
+
+GistLens includes an optional, privacy-focused telemetry system powered by PostHog.
+
+### Key Features
+
+- **Opt-in analytics** - Users can enable/disable telemetry in settings
+- **Privacy-focused** - No session recording, manual event tracking only
+- **Custom PostHog instance** - Support for custom PostHog API keys
+- **Comprehensive tracking** including:
+  - Gist views and searches
+  - File downloads and code copying
+  - Theme toggles and preview mode
+  - Share actions (native share, clipboard, social media)
+  - Settings changes
+  - User gist browsing
+  - Featured gist interactions
+  - History navigation
+
+### Configuration
+
+To enable telemetry:
+
+1. Open Settings (gear icon in top right)
+2. Scroll to "Analytics & Telemetry" section
+3. Toggle "Enable Telemetry"
+4. (Optional) Provide your PostHog API key for custom tracking
+
+### Privacy Guarantee
+
+- Telemetry is **disabled by default**
+- All tracking is done client-side
+- No personally identifiable information is collected
+- No session recording
+- Users have full control via settings
+
+## GitHub Authentication
+
+Authenticate with GitHub to access private gists and manage your content.
+
+### Authentication Features
+
+- **GitHub OAuth integration** - Secure authentication flow
+- **Private gist access** - View your private gists when authenticated
+- **User profile** - Display authenticated user info with avatar
+- **Token-based auth** - Manual token entry for development/testing
+
+### API Capabilities
+
+- Fetch private gists
+- Create new gists
+- Edit existing gists
+- Delete gists
+- Star/unstar gists
+- Fork gists
+
+### Security
+
+- OAuth tokens stored securely server-side
+- Client secrets never exposed to frontend
+- Encrypted session management with Auth.js
+- Database-backed user persistence
+
+## Custom Stylesheets
+
+Personalize your GistLens experience with custom CSS for the app and content renderers.
+
+### Style Targets
+
+- **App** - Global application styles
+- **Markdown** - Markdown content rendering
+- **Code** - Syntax-highlighted code blocks
+- **MDX** - MDX content rendering
+- **RST** - reStructuredText rendering
+- **JSX** - JSX code rendering
+
+### Editor Features
+
+- Live CSS editor with syntax highlighting
+- Enable/disable per target
+- Built-in templates:
+  - Dark theme enhancements
+  - Large text for accessibility
+  - Custom fonts
+  - Colorful headings
+- Import/export functionality
+- Persistent storage (database-backed in v2.0)
+- Auto-apply on page load
+
+### Getting Started
+
+1. Open Settings
+2. Navigate to "Custom Styles" section
+3. Click "Open Style Editor"
+4. Select your target (e.g., Markdown)
+5. Write CSS or load a template
+6. Enable and save
+
+## Media Viewers
+
+GistLens supports rich media file rendering and visualization for various file types.
+
+### 🖼️ Image Viewer
+
+**Supported formats:** PNG, JPG, JPEG, GIF, WEBP, SVG, BMP, ICO, TIFF, AVIF, HEIC, HEIF
+
+**Features:**
+- Pan and zoom with mouse/touch
+- Rotate image 90° increments
+- Reset view to original
+- Download image
+- Drag to pan, scroll/pinch to zoom
+
+### 🎥 Video Player
+
+**Supported formats:** MP4, WEBM, OGG, OGV, MOV, AVI, WMV, FLV, MKV, M4V
+
+**Features:**
+- Custom HTML5 video player
+- Play/pause controls
+- Volume control with slider
+- Seek/scrub timeline
+- Fullscreen mode
+- Download video
+- Time display (current/total)
+
+### 🎵 Audio Player
+
+**Supported formats:** MP3, WAV, OGG, OGA, FLAC, M4A, AAC, WMA, OPUS, WEBM
+
+**Features:**
+- Beautiful music player UI
+- Play/pause controls
+- Volume slider
+- Seek/scrub timeline
+- Skip forward/backward (10s)
+- Download audio
+- Animated playback indicator
+
+### 📊 Data Viewers
+
+**Supported formats:** CSV, TSV, JSON, XML, YAML, YML, TOML
+
+#### CSV/TSV Viewer
+- Interactive table with sortable columns
+- Search/filter across all data
+- Click column headers to sort
+- Row count display
+- Automatic type detection
+- Download original file
+
+#### JSON Viewer
+- Tree structure with collapsible nodes
+- Syntax highlighting
+- Object size display
+- Copy values to clipboard
+- Expand/collapse all
+- Search within structure
+
+#### XML/YAML Viewer
+- Syntax highlighted display
+- Formatted text view
+- Download original file
+
+### 📄 PDF Viewer
+
+**Features:**
+- Native browser PDF viewer
+- Zoom in/out
+- Page navigation
+- Text selection and search
+- Open in new tab
+- Download PDF
+
+## Gist Management
+
+### Viewing Gists
+
+- **Syntax highlighting** for 150+ programming languages
+- **Markdown preview** with live rendering
+- **File browser** with tabs for multiple files
+- **Line numbers** and code blocks
+- **Copy to clipboard** with one click
+- **Download files** individually or as ZIP
+
+### Searching & Discovery
+
+- **Search by gist ID** or URL
+- **Browse by username** to see all public gists
+- **Featured gists** showcase on homepage
+- **Recently viewed** history tracking
+- **Keyboard shortcuts** for quick navigation
+
+### Sharing
+
+Multiple sharing options:
+- **Native share** API for mobile devices
+- **Copy link** to clipboard
+- **Social media** quick links (Twitter, Facebook, LinkedIn)
+- **Email** share
+- **Embed** code for websites
+
+## User Interface
+
+### Themes
+
+- **Dark mode** (default) - Eye-friendly dark theme
+- **Light mode** - Clean light theme
+- **System preference** - Follows OS theme
+- **Theme toggle** with keyboard shortcut (Ctrl+D)
+
+### Customization
+
+- **Font size** adjustment (Small, Medium, Large)
+- **Show/hide line numbers** in code blocks
+- **Syntax highlighting** toggle
+- **Auto-preview markdown** on load
+- **Custom styles** per content type
+
+### Accessibility
+
+- **Keyboard navigation** throughout the app
+- **Screen reader** support
+- **High contrast** modes
+- **Adjustable text sizes**
+- **Focus indicators**
+
+## Performance
+
+- **Fast loading** with Next.js 15 optimizations
+- **Code splitting** for smaller bundles (~105 kB first load)
+- **Server-side rendering** for better SEO
+- **Static generation** where possible
+- **Lazy loading** for media files
+- **Caching** for frequently accessed gists
+
+## Coming Soon
+
+Features planned for future releases:
+
+- **Gist collections** - Organize your favorite gists
+- **Tags and labels** - Categorize gists
+- **Comments** - Discuss gists with the community
+- **Collaborative editing** - Edit gists together
+- **Version history** - Track gist changes over time
+- **Advanced search** - Filter by language, date, stars
+- **Export options** - PDF, HTML, Markdown
+- **API access** - Programmatic gist management
+- **Mobile apps** - Native iOS and Android applications

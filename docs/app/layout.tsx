@@ -29,17 +29,17 @@ export default function RootLayout({
                   <Link href="/getting-started" className="text-sm text-muted-foreground hover:text-foreground">
                     Getting Started
                   </Link>
+                  <Link href="/features" className="text-sm text-muted-foreground hover:text-foreground">
+                    Features
+                  </Link>
                   <Link href="/auth" className="text-sm text-muted-foreground hover:text-foreground">
-                    Auth.js Setup
+                    Auth.js
                   </Link>
-                  <Link href="/database" className="text-sm text-muted-foreground hover:text-foreground">
-                    Database
+                  <Link href="/migration" className="text-sm text-muted-foreground hover:text-foreground">
+                    Migration
                   </Link>
-                  <Link href="/api" className="text-sm text-muted-foreground hover:text-foreground">
-                    API Routes
-                  </Link>
-                  <Link href="/deployment" className="text-sm text-muted-foreground hover:text-foreground">
-                    Deployment
+                  <Link href="/changelog" className="text-sm text-muted-foreground hover:text-foreground">
+                    Changelog
                   </Link>
                 </nav>
               </div>

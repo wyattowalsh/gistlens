@@ -1,0 +1,294 @@
+# Changelog
+
+All notable changes to GistLens will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0] - 2025-11-19
+
+### Major Refactoring: Next.js 15 + PostgreSQL + Auth.js
+
+Complete architectural refactoring from Vite/React SPA to Next.js 15 with server-side authentication and database persistence.
+
+### Added
+
+#### Infrastructure
+- **Next.js 15** with App Router and Server Components
+- **PostgreSQL** database with complete schema (7 tables)
+- **Auth.js** (NextAuth.js v5) with GitHub OAuth
+- **Vercel Postgres** support for database
+- **TypeScript** strict mode throughout
+- **Server-side API routes** for secure GitHub operations
+- **pnpm** workspace configuration for monorepo structure
+- **MDX** support for documentation pages
+
+#### Authentication
+- GitHub OAuth with proper server-side secret management
+- User creation and management in PostgreSQL
+- Session persistence with encrypted JWT
+- Database-backed user profiles
+- Support for private gist access
+- Automatic token refresh
+
+#### Database Schema
+- `users` - User profiles from GitHub OAuth
+- `sessions` - Auth.js session storage
+- `accounts` - OAuth provider accounts
+- `user_settings` - User preferences and settings
+- `gist_history` - Recently viewed gists per user
+- `custom_styles` - User custom CSS per target
+- `verification_tokens` - Email verification support
+
+#### API Routes
+- `/api/auth/[...nextauth]` - Auth.js endpoints
+- `/api/github/gist/[id]` - GET, PATCH, DELETE operations
+- `/api/github/gists` - GET (list), POST (create) operations
+- Automatic authentication token injection
+- Fallback to public API when not authenticated
+
+#### Documentation
+- **LOCAL_DEVELOPMENT.md** - Complete 12,000+ word local setup guide
+- **Documentation Site** - Standalone Next.js site (port 3001)
+  - Getting Started guide with MDX
+  - Auth.js configuration documentation
+  - Database schema reference
+  - Features overview
+  - Migration guide
+  - Changelog
+- **AGENTS.md** - 22,000+ word AI agent instructions
+- **.github/ISSUE_TEMPLATE/** - YAML-based issue templates
+- **.github/pull_request_template.md** - Comprehensive PR template
+
+#### CI/CD Workflows
+- **ci.yml** - Continuous integration (lint, type-check, build)
+- **security.yml** - CodeQL analysis, dependency review, npm audit
+- **deploy-docs.yml** - Automatic GitHub Pages deployment
+
+#### Developer Experience
+- **Hot reload** with Next.js Fast Refresh
+- **TypeScript** for type safety
+- **ESLint** configuration for Next.js
+- **pnpm** for faster installs and better dependency management
+- **Docker Compose** support for local PostgreSQL
+- **VS Code** debugging configuration examples
+
+### Changed
+
+#### Architecture
+- Migrated from **Vite + React** to **Next.js 15 App Router**
+- Migrated from **client-side SPA** to **SSR + API routes**
+- Migrated from **localStorage** to **PostgreSQL** for persistence
+- Migrated from **manual tokens** to **OAuth flow**
+- Migrated from **npm** to **pnpm** for package management
+
+#### Security
+- **Client secrets** now server-side only (never exposed to frontend)
+- **GitHub tokens** managed server-side with automatic refresh
+- **Sessions** encrypted with Auth.js JWT
+- **Database queries** use parameterized statements (SQL injection prevention)
+- **API routes** include proper authentication checks
+
+#### Performance
+- **First load JS** reduced to ~105 kB with code splitting
+- **Server-side rendering** for better initial page load
+- **Static generation** for documentation pages
+- **Automatic code splitting** by Next.js
+- **Image optimization** with Next.js Image component
+
+### Security
+
+#### Fixed Vulnerabilities
+- GitHub client secret no longer exposed in frontend code
+- OAuth tokens no longer stored in localStorage
+- SQL injection prevention with parameterized queries
+- CSRF protection with Auth.js built-in middleware
+- XSS prevention with React's automatic escaping
+
+#### Enhanced Security
+- Server-side API routes for all GitHub operations
+- Encrypted JWT sessions with Auth.js
+- Database-backed user management
+- Automatic token refresh
+- Secure cookie handling
+
+### Deprecated
+
+#### Removed Features (Temporarily)
+- Original Vite/React components (preserved in `src/` for reference)
+- Client-side localStorage for settings (migrated to PostgreSQL)
+- Manual token entry UI (replaced with OAuth)
+
+#### Migration Path
+All v1.0 features will be migrated to v2.0 architecture:
+- UI components from `src/components/` → `components/`
+- Client-side features → Server/Client Component split
+- localStorage → PostgreSQL persistence
+- See [Migration Guide](./migration) for details
+
+### Fixed
+
+- **TypeScript errors** across all components
+- **Build configuration** issues
+- **ESLint** warnings
+- **Type safety** for Auth.js session
+- **Database connection** pooling
+
+## [1.0.0] - 2024-XX-XX
+
+### Initial Release
+
+#### Core Features
+- View GitHub gists with syntax highlighting
+- Markdown preview with live rendering
+- Dark and light themes
+- Custom stylesheets for personalization
+- Media viewers (images, videos, audio, PDFs, data files)
+- Share functionality (clipboard, social, native share)
+- Gist history tracking
+- GitHub authentication (manual token)
+- Telemetry opt-in (PostHog)
+
+#### UI Components
+- Gist viewer with file tabs
+- Settings dialog
+- Custom stylesheet editor
+- Image viewer with pan/zoom
+- Video player with controls
+- Audio player with timeline
+- CSV/TSV data table viewer
+- JSON tree viewer
+- PDF embed viewer
+
+#### Technologies
+- **React 18** with Vite
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **GitHub API** for gist data
+- **PostHog** for analytics
+- **LocalStorage** for persistence
+
+## Version History
+
+### Unreleased
+
+#### Planned Features
+- **Gist Collections** - Organize favorite gists
+- **Tags and Labels** - Categorize gists
+- **Comments** - Discuss gists with community
+- **Collaborative Editing** - Edit gists together
+- **Version History** - Track gist changes
+- **Advanced Search** - Filter by language, date, stars
+- **Export Options** - PDF, HTML, Markdown
+- **API Access** - Programmatic gist management
+- **Mobile Apps** - Native iOS and Android
+
+#### Improvements Planned
+- **Search Optimization** - Full-text search
+- **Caching Layer** - Redis for frequently accessed gists
+- **Real-time Updates** - WebSocket support
+- **Offline Mode** - Service worker for offline access
+- **Internationalization** - Multi-language support
+
+## Upgrade Guide
+
+### From v1.0 to v2.0
+
+See the [Migration Guide](./migration) for complete upgrade instructions.
+
+#### Breaking Changes
+
+1. **Configuration**: `.env` format changed (see `.env.example`)
+2. **Authentication**: Manual tokens replaced with OAuth
+3. **Storage**: localStorage replaced with PostgreSQL
+4. **Build**: Vite replaced with Next.js
+5. **Package Manager**: npm replaced with pnpm (optional but recommended)
+
+#### Data Migration
+
+- **Settings**: Need to be reconfigured in v2.0 Settings dialog
+- **Custom Styles**: Can be imported/exported
+- **History**: Will be fresh per authenticated user
+- **GitHub Token**: Use OAuth instead of manual token
+
+#### Feature Changes
+
+- **Private Gists**: Now require OAuth authentication (more secure)
+- **Settings Sync**: Now sync across devices (database-backed)
+- **Performance**: Improved with SSR and code splitting
+- **Security**: Enhanced with server-side secret management
+
+## Roadmap
+
+### Q1 2025
+
+- [ ] Complete UI component migration from v1.0
+- [ ] Implement gist collections
+- [ ] Add tags and labels system
+- [ ] Enhance search with filters
+- [ ] Add export functionality
+
+### Q2 2025
+
+- [ ] Collaborative editing features
+- [ ] Comment system
+- [ ] Version history tracking
+- [ ] API access for developers
+- [ ] Mobile-responsive improvements
+
+### Q3 2025
+
+- [ ] Mobile app development (iOS/Android)
+- [ ] Offline mode with service worker
+- [ ] Real-time collaboration
+- [ ] Advanced analytics dashboard
+- [ ] Internationalization (i18n)
+
+### Q4 2025
+
+- [ ] Enterprise features
+- [ ] Team management
+- [ ] Organization support
+- [ ] Custom domains
+- [ ] White-label options
+
+## Support
+
+### Getting Help
+
+- **Documentation**: Check the [docs site](http://localhost:3001) for detailed guides
+- **GitHub Issues**: Report bugs or request features
+- **Discussions**: Ask questions in GitHub Discussions
+- **Security**: Report security issues privately
+
+### Contributing
+
+We welcome contributions! See:
+- **AGENTS.md** - Development guidelines
+- **Pull Request Template** - PR checklist
+- **Issue Templates** - Bug reports, feature requests
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Acknowledgments
+
+### Technologies
+
+- **Next.js** - React framework
+- **Auth.js** - Authentication solution
+- **PostgreSQL** - Database
+- **Vercel** - Deployment platform
+- **PostHog** - Analytics platform
+- **Tailwind CSS** - Styling framework
+
+### Contributors
+
+GistLens v2.0 is a collaborative effort. Special thanks to all contributors who helped shape this release.
+
+---
+
+**Current Version**: 2.0.0  
+**Release Date**: November 19, 2025  
+**Status**: Production Ready 🚀

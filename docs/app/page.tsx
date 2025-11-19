@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Database, Lock, Code, Rocket, Settings } from 'lucide-react';
+import { BookOpen, Database, Lock, Code, Rocket, Settings, Sparkles, FileText } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -72,7 +72,27 @@ export default function HomePage() {
           </div>
           <h3 className="text-lg font-semibold mb-2">Migration Guide</h3>
           <p className="text-sm text-muted-foreground">
-            Migrate UI components from the original Vite/React application
+            Complete guide for upgrading from v1.0 to v2.0
+          </p>
+        </Link>
+
+        <Link href="/features" className="group p-6 rounded-2xl border hover:border-primary transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Sparkles className="w-6 h-6 text-yellow-500" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Features</h3>
+          <p className="text-sm text-muted-foreground">
+            Explore telemetry, auth, custom styles, and media viewers
+          </p>
+        </Link>
+
+        <Link href="/changelog" className="group p-6 rounded-2xl border hover:border-primary transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <FileText className="w-6 h-6 text-indigo-500" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Changelog</h3>
+          <p className="text-sm text-muted-foreground">
+            Version history and release notes for all releases
           </p>
         </Link>
       </div>
