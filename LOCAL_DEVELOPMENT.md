@@ -107,17 +107,23 @@ psql postgresql://gistlens_user:your_password@localhost:5432/gistlens -f lib/db/
    psql $POSTGRES_URL -f lib/db/schema.sql
    ```
 
-#### Option C: Supabase (Cloud)
+#### Option C: Supabase (Recommended - Modern, Feature-rich)
 
 1. Create account at [supabase.com](https://supabase.com)
-2. Create new project
-3. Go to Project Settings → Database
-4. Copy connection string (session mode)
-5. Update `.env.local` with Supabase URL
-6. Run schema in SQL Editor or locally:
-   ```bash
-   psql $POSTGRES_URL -f lib/db/schema.sql
+2. Click "New Project" and fill in details
+3. Wait for project to be provisioned (~2 minutes)
+4. Go to Project Settings → API
+5. Copy the following to `.env.local`:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
    ```
+6. Run migrations in SQL Editor:
+   - Navigate to SQL Editor in dashboard
+   - Copy contents of `supabase/migrations/20250119000000_initial_schema.sql`
+   - Paste and click "Run"
+
+**See [SUPABASE_GUIDE.md](./SUPABASE_GUIDE.md) for detailed setup instructions.**
 
 #### Option D: Docker (Quick Local Setup)
 

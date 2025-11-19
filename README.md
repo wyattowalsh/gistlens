@@ -34,6 +34,13 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 - 💾 **Intelligent Settings Persistence** - Automatic sync between server and local storage
 - 📊 **Advanced Telemetry** - Comprehensive usage tracking with PostHog (optional, privacy-focused)
 
+### 🔥 Supabase-Powered Features
+- 🔐 **Row Level Security** - Database-level security policies for data protection
+- ⚡ **Real-time Updates** - Live data synchronization via WebSockets
+- 🔑 **Advanced Authentication** - Secure OAuth with multiple providers
+- 📦 **Scalable Storage** - S3-compatible file storage (future enhancement)
+- 🤖 **AI-Ready** - pgvector support for semantic search (future enhancement)
+
 ### Enhanced Markdown Features
 - ✅ GitHub-flavored markdown (GFM)
 - 🧮 Math equations with KaTeX
@@ -58,7 +65,7 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 
 - Node.js 20+
 - pnpm 10+ (recommended package manager)
-- PostgreSQL 14+ (or cloud provider)
+- Database: Supabase (recommended) or PostgreSQL 14+ (legacy)
 
 ### Installation
 
@@ -77,8 +84,9 @@ pnpm install
 cp .env.example .env.local
 # Edit .env.local with your credentials
 
-# Setup database (see docs for options)
-psql $POSTGRES_URL -f lib/db/schema.sql
+# Setup database
+# Option A: Supabase (recommended) - See SUPABASE_GUIDE.md
+# Option B: PostgreSQL - psql $POSTGRES_URL -f lib/db/schema.sql
 
 # Start development server
 pnpm dev
@@ -110,7 +118,7 @@ pnpm start
 - **Next.js 15** - React framework with App Router and Server Components
 - **React 19** - Modern UI framework with latest features
 - **TypeScript 5** - Type-safe development
-- **PostgreSQL** - Database for users, sessions, and settings
+- **Supabase** - Modern PostgreSQL database with real-time, RLS, and auth
 - **Auth.js (NextAuth v5)** - Secure GitHub OAuth authentication
 - **Tailwind CSS v3** - Utility-first CSS framework
 - **shadcn/ui** - Beautiful, accessible component library
