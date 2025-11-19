@@ -2,6 +2,144 @@
 
 This document describes the new features added to GistLens v2.0 as part of the latest enhancement.
 
+## 🔥 Supabase Integration (Latest)
+
+GistLens now features a complete integration with Supabase, the modern open-source Firebase alternative, bringing enterprise-grade features and best practices to the application.
+
+### Why Supabase?
+
+Supabase provides several key advantages:
+- **Real-time Database**: Live data synchronization via WebSockets
+- **Row Level Security (RLS)**: Database-level security policies for data protection
+- **Built-in Auth**: Secure authentication with multiple OAuth providers
+- **Edge Functions**: Serverless functions at the edge for low latency
+- **Storage**: S3-compatible file storage with CDN delivery
+- **Vector Database**: pgvector support for AI/ML applications
+- **Type Safety**: Excellent TypeScript support and developer experience
+
+### Features Included
+
+#### 1. Server-Side Rendering (SSR) Support
+- `@supabase/ssr` package for Next.js 15 compatibility
+- Separate client implementations for browser, server, and middleware contexts
+- Proper cookie-based session management
+- Automatic token refresh via middleware
+
+#### 2. Row Level Security (RLS)
+Complete security policies implemented for all tables:
+- **Users**: Can only view/update their own profile
+- **Settings**: Per-user isolation with automatic enforcement
+- **Gist History**: Full CRUD operations only for own history
+- **Custom Styles**: Secure style management per user
+- **Sessions & Accounts**: Secure OAuth token storage
+
+Benefits:
+- Security enforced at the database level
+- Even application bugs can't bypass security
+- Performance optimized (policies applied in database)
+- Real-time subscriptions automatically respect RLS
+
+#### 3. Real-time Subscriptions
+Live data updates across browser tabs and devices:
+- **Gist History**: Instantly see when gists are viewed
+- **User Settings**: Sync settings changes across all sessions
+- **Custom Styles**: Live updates when styles are modified
+- Generic subscription helper for any table
+
+Example usage:
+```typescript
+import { subscribeToGistHistory } from '@/lib/supabase/realtime';
+
+const channel = subscribeToGistHistory(
+  supabase,
+  userId,
+  (newGist) => console.log('New gist!', newGist),
+  (updated) => console.log('Updated!', updated),
+  (deleted) => console.log('Deleted!', deleted)
+);
+
+// Cleanup when done
+channel.unsubscribe();
+```
+
+#### 4. Type-Safe Database Operations
+Full TypeScript support throughout:
+- Database schema types for all tables
+- Row, Insert, and Update types for each table
+- Type-safe queries with autocomplete
+- Compile-time error checking
+
+Example:
+```typescript
+import type { GistHistory, UserSettings } from '@/types/supabase';
+
+const { data } = await supabase
+  .from('gist_history')
+  .select('*')
+  .eq('user_id', userId);
+// data is properly typed as GistHistory[]
+```
+
+#### 5. Database Schema
+Complete PostgreSQL schema with:
+- All existing tables (users, sessions, accounts, etc.)
+- Automatic timestamp triggers (updated_at)
+- Proper indexes for performance
+- Foreign key constraints
+- Unique constraints
+- Real-time publication setup
+
+#### 6. Migration Support
+Seamless migration from Vercel Postgres:
+- Same API surface for database operations
+- Both implementations available (`lib/db/index.ts` and `lib/db/supabase.ts`)
+- Easy to switch with environment variables
+- Data migration tools and instructions
+
+### Setup
+
+See the comprehensive [SUPABASE_GUIDE.md](./SUPABASE_GUIDE.md) for:
+- Step-by-step setup instructions
+- Architecture overview
+- Best practices
+- Real-time usage examples
+- Troubleshooting guide
+- Migration from Vercel Postgres
+
+Quick start:
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Add credentials to `.env.local`
+3. Run migrations in SQL Editor
+4. Start using Supabase features!
+
+### Documentation
+
+Extensive documentation includes:
+- **SUPABASE_GUIDE.md**: 10,000+ word comprehensive guide
+- **examples/supabase/**: Working example components
+- **Type definitions**: Complete TypeScript types in `types/supabase.ts`
+- **Real-time helpers**: Documented subscription functions
+
+### Performance & Scalability
+
+Supabase provides:
+- Connection pooling for high traffic
+- Edge network for low latency
+- Automatic scaling
+- Built-in caching
+- Efficient query optimization
+- Real-time at scale (uses PostgreSQL replication)
+
+### Future Enhancements
+
+Potential features enabled by Supabase:
+- **Storage Integration**: File uploads for gist attachments
+- **Edge Functions**: Custom API endpoints at the edge
+- **Vector Search**: AI-powered semantic gist search with pgvector
+- **Real-time Collaboration**: Live gist editing across users
+- **Webhooks**: Integrate with external services
+- **Database Functions**: Complex queries as stored procedures
+
 ## 🎭 Configurable Icon Sets
 
 GistLens now supports multiple icon set styles that users can choose from based on their preference.
