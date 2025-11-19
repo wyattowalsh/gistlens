@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Papa from 'papaparse';
-import { JsonViewer } from '@textea/json-viewer';
+import { JsonView, defaultStyles } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
 import { Search, ArrowUpDown, ArrowUp, ArrowDown, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -184,13 +185,10 @@ export function DataViewer({ file, className }: DataViewerProps) {
             </Button>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4 overflow-auto max-h-[600px]">
-            <JsonViewer 
-              value={data.content} 
-              theme="auto"
-              defaultInspectDepth={2}
-              displayDataTypes={false}
-              displayObjectSize={true}
-              enableClipboard={true}
+            <JsonView 
+              data={data.content} 
+              shouldExpandNode={(level) => level < 2}
+              style={defaultStyles}
             />
           </div>
         </div>
