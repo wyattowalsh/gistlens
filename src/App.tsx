@@ -457,24 +457,26 @@ const ShareButton = ({ url, title, description, compact = false }) => {
 
 // --- Main Application ---
 
+import type { GistData, HistoryItem, FeaturedGist } from '@/types';
+
 export default function GistLens() {
   // State
-  const [input, setInput] = useState('');
-  const [currentGistId, setCurrentGistId] = useState(null);
-  const [currentUsername, setCurrentUsername] = useState(null);
-  const [view, setView] = useState('home'); // 'home', 'gist', 'user'
-  const [gistData, setGistData] = useState(null);
-  const [userGists, setUserGists] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [activeFileIndex, setActiveFileIndex] = useState(0);
-  const [darkMode, setDarkMode] = useState(true);
-  const [history, setHistory] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Start minimized on homepage
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [featuredGists, setFeaturedGists] = useState(DEFAULT_FEATURED_GISTS);
-  const [loadingFeatured, setLoadingFeatured] = useState(false);
+  const [input, setInput] = useState<string>('');
+  const [currentGistId, setCurrentGistId] = useState<string | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+  const [view, setView] = useState<'home' | 'gist' | 'user'>('home');
+  const [gistData, setGistData] = useState<GistData | null>(null);
+  const [userGists, setUserGists] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeFileIndex, setActiveFileIndex] = useState<number>(0);
+  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [previewMode, setPreviewMode] = useState<boolean>(false);
+  const [featuredGists, setFeaturedGists] = useState<FeaturedGist[]>(DEFAULT_FEATURED_GISTS);
+  const [loadingFeatured, setLoadingFeatured] = useState<boolean>(false);
 
   // Handlers (defined early to avoid hoisting issues)
   const addToHistory = useCallback((data) => {
