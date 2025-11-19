@@ -59,6 +59,7 @@ export function ImageViewer({ file, className }) {
         URL.revokeObjectURL(imageUrl);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file]);
 
   const handleRotate = () => {

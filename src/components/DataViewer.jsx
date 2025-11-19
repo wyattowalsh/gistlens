@@ -21,6 +21,7 @@ export function DataViewer({ file, className }) {
 
   useEffect(() => {
     parseData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file.content, fileExtension]);
 
   const parseData = () => {

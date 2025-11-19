@@ -45,7 +45,7 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { DataViewer } from '@/components/DataViewer';
 import { PDFViewer } from '@/components/PDFViewer';
-import { getFileType, isMarkdownFile } from '@/lib/fileTypes';
+import { getFileType } from '@/lib/fileTypes';
 import { cn } from '@/lib/utils';
 
 /**
