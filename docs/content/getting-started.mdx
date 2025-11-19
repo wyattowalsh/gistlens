@@ -1,0 +1,211 @@
+# Getting Started with GistLens
+
+Welcome to GistLens! This guide will help you set up your local development environment and get the application running.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** 20.0.0 or higher
+- **pnpm** 10.0.0 or higher
+- **PostgreSQL** 14.0 or higher (or use a cloud provider)
+- **Git** for version control
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/wyattowalsh/gistlens.git
+cd gistlens
+```
+
+### 2. Install Dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Set Up Environment Variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` and configure the following variables:
+
+```env
+# Database
+POSTGRES_URL="postgresql://user:password@localhost:5432/gistlens"
+
+# Auth.js
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-here"
+
+# GitHub OAuth
+GITHUB_CLIENT_ID="your-github-client-id"
+GITHUB_CLIENT_SECRET="your-github-client-secret"
+GITHUB_REDIRECT_URI="http://localhost:3000/api/auth/callback/github"
+```
+
+Generate a secret for `NEXTAUTH_SECRET`:
+
+```bash
+openssl rand -base64 32
+```
+
+### 4. Set Up Database
+
+Choose one of the following options:
+
+#### Option 1: Local PostgreSQL
+
+```bash
+# Create database
+createdb gistlens
+
+# Run schema
+psql postgresql://localhost:5432/gistlens -f lib/db/schema.sql
+```
+
+#### Option 2: Docker Compose (Recommended)
+
+```bash
+# Start PostgreSQL in Docker
+docker-compose up -d
+
+# Run schema
+psql postgresql://localhost:5432/gistlens -f lib/db/schema.sql
+```
+
+#### Option 3: Vercel Postgres
+
+1. Create a Vercel Postgres database in your Vercel dashboard
+2. Copy the connection strings to your `.env.local`
+3. Run the schema using the Vercel Postgres SQL editor or CLI
+
+### 5. Set Up GitHub OAuth
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Click "New OAuth App"
+3. Fill in the details:
+   - **Application name**: GistLens (Local)
+   - **Homepage URL**: `http://localhost:3000`
+   - **Authorization callback URL**: `http://localhost:3000/api/auth/callback/github`
+4. Click "Register application"
+5. Copy the **Client ID** and generate a **Client Secret**
+6. Add them to your `.env.local` file
+
+### 6. Run the Development Server
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to see the application.
+
+## Running the Documentation Site
+
+The documentation site runs on a separate port:
+
+```bash
+pnpm docs:dev
+```
+
+Open [http://localhost:3001](http://localhost:3001) to see the documentation.
+
+You can run both the main app and docs simultaneously in separate terminals.
+
+## Verification
+
+After setup, verify everything is working:
+
+1. **Application loads**: Visit http://localhost:3000
+2. **Database connected**: Check the console for no DB errors
+3. **Authentication works**: Click "Sign in with GitHub"
+4. **API routes work**: Try loading a public gist
+
+## Common Issues
+
+### Port Already in Use
+
+If port 3000 or 3001 is already in use:
+
+```bash
+# Use a different port
+pnpm dev -- --port 3002
+```
+
+### Database Connection Failed
+
+Check that:
+- PostgreSQL is running
+- Connection string is correct
+- Database exists
+- User has proper permissions
+
+### Auth.js Errors
+
+Verify:
+- `NEXTAUTH_SECRET` is set
+- `NEXTAUTH_URL` matches your development URL
+- GitHub OAuth credentials are correct
+- Callback URL matches GitHub app settings
+
+## Next Steps
+
+- [Configure Auth.js](/auth) - Set up authentication in detail
+- [Explore the Database](/database) - Understand the schema
+- [Use API Routes](/api) - Make GitHub API calls
+- [Deploy to Production](/deployment) - Deploy your app
+
+## Development Workflow
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Start production server
+pnpm start
+
+# Lint code
+pnpm lint
+
+# Type check
+pnpm type-check
+```
+
+## Project Structure
+
+```
+gistlens/
+├── app/              # Next.js App Router
+│   ├── api/          # API routes
+│   ├── layout.tsx    # Root layout
+│   └── page.tsx      # Homepage
+├── components/       # React components
+├── lib/              # Utilities
+│   ├── auth/         # Auth.js config
+│   └── db/           # Database operations
+├── docs/             # Documentation site
+├── public/           # Static files
+└── types/            # TypeScript types
+```
+
+## Getting Help
+
+- [View Full Documentation](/auth)
+- [Check GitHub Issues](https://github.com/wyattowalsh/gistlens/issues)
+- [Read LOCAL_DEVELOPMENT.md](https://github.com/wyattowalsh/gistlens/blob/main/LOCAL_DEVELOPMENT.md)
+
+---
+
+Ready to dive deeper? Check out our [Auth.js Setup Guide](/auth) next!

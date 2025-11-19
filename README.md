@@ -41,8 +41,9 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 20+
+- pnpm 10+ (recommended package manager)
+- PostgreSQL 14+ (or cloud provider)
 
 ### Installation
 
@@ -51,17 +52,27 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 git clone https://github.com/wyattowalsh/gistlens.git
 cd gistlens
 
+# Install pnpm globally (if not already installed)
+npm install -g pnpm
+
 # Install dependencies
-npm install
+pnpm install
+
+# Setup environment variables
+cp .env.example .env.local
+# Edit .env.local with your credentials
+
+# Setup database (see docs for options)
+psql $POSTGRES_URL -f lib/db/schema.sql
 
 # Start development server
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
-# Preview production build
-npm run preview
+# Start production server
+pnpm start
 ```
 
 ## 🎯 Usage
@@ -81,11 +92,14 @@ npm run preview
 ## 🛠️ Technology Stack
 
 ### Core Technologies
-- **React 18** - Modern UI framework with hooks
-- **Vite 5** - Lightning-fast build tool and dev server
+- **Next.js 15** - React framework with App Router and Server Components
+- **React 19** - Modern UI framework with latest features
+- **TypeScript 5** - Type-safe development
+- **PostgreSQL** - Database for users, sessions, and settings
+- **Auth.js (NextAuth v5)** - Secure GitHub OAuth authentication
 - **Tailwind CSS v3** - Utility-first CSS framework
 - **shadcn/ui** - Beautiful, accessible component library
-- **Lucide React** - Modern icon library
+- **pnpm** - Fast, disk space efficient package manager
 
 ### Markdown & Code Rendering
 - **Unified** - Markdown processing pipeline
@@ -107,26 +121,32 @@ npm run preview
 
 ```
 gistlens/
-├── src/
-│   ├── components/
-│   │   ├── ui/                    # shadcn/ui components
-│   │   │   ├── button.jsx
-│   │   │   ├── tabs.jsx
-│   │   │   ├── separator.jsx
-│   │   │   └── scroll-area.jsx
-│   │   └── MarkdownRenderer.jsx   # Enhanced markdown component
-│   ├── lib/
-│   │   ├── utils.js               # Utility functions (cn)
-│   │   └── button-variants.js     # Button variant definitions
-│   ├── App.jsx                    # Main application (v2.0)
-│   ├── main.jsx                   # React entry point
-│   └── index.css                  # Global styles + shadcn theme
-├── index.html                     # HTML entry point
+├── app/                           # Next.js App Router
+│   ├── api/                       # API routes
+│   │   ├── auth/[...nextauth]/   # Auth.js endpoints
+│   │   └── github/                # GitHub API proxies
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Homepage
+│   └── globals.css                # Global styles
+├── components/                    # React components
+│   └── ui/                        # shadcn/ui components
+│       └── button.tsx             # Button component
+├── lib/                           # Utility functions & logic
+│   ├── auth/                      # Auth.js configuration
+│   ├── db/                        # Database operations
+│   └── utils.ts                   # Utility functions
+├── docs/                          # Documentation site (Next.js)
+│   ├── app/                       # Docs pages
+│   ├── content/                   # MDX content
+│   └── components/                # MDX components
+├── types/                         # TypeScript type definitions
+├── .github/                       # GitHub workflows & templates
+│   └── agents/                    # AI agent instructions
 ├── package.json                   # Dependencies and scripts
-├── vite.config.js                 # Vite + MDX configuration
-├── tailwind.config.js             # Tailwind CSS + shadcn config
-├── postcss.config.js              # PostCSS configuration
-└── .eslintrc.cjs                  # ESLint configuration
+├── next.config.ts                 # Next.js configuration
+├── tsconfig.json                  # TypeScript config
+├── tailwind.config.js             # Tailwind CSS config
+└── pnpm-workspace.yaml            # pnpm workspace config
 ```
 
 ## 🎨 Features in Detail

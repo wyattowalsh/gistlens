@@ -8,6 +8,8 @@ pnpm-lock.yaml
 dist/
 build/
 *.local
+.next/
+out/
 
 # IDE
 .vscode/

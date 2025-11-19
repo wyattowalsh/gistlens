@@ -1,0 +1,427 @@
+# Migration Guide
+
+Complete guide for migrating to GistLens v2.0 with Next.js 15, PostgreSQL, and Auth.js.
+
+## Overview
+
+GistLens has been successfully migrated from Vite + React to **Next.js 15** with the following major improvements:
+
+### ✅ What's New in v2.0
+
+#### 1. Next.js 15 with App Router
+- Server Components for better performance
+- Server-side rendering (SSR) for improved SEO
+- API routes for secure backend operations
+- Optimized production builds (~105 kB first load)
+- React 19 support
+
+#### 2. PostgreSQL Database
+- User management and authentication
+- Session storage with Auth.js
+- User settings persistence
+- Gist history tracking
+- Custom styles per user
+- Prepared for future features (collections, tags, etc.)
+
+#### 3. Secure Authentication
+- **Auth.js** (formerly NextAuth.js v5)
+- GitHub OAuth with server-side secret management
+- No client secrets exposed in frontend
+- Encrypted JWT sessions
+- Database-backed user persistence
+- Automatic token refresh
+
+#### 4. Server-Side API Routes
+- `/api/github/gist/[id]` - Fetch, update, delete gists
+- `/api/github/gists` - Create gists, list user gists
+- All GitHub API calls now go through secure backend
+- Automatic authentication injection
+- Proper error handling
+
+## Quick Start
+
+### 1. Prerequisites
+
+Ensure you have the following installed:
+
+- **Node.js** 20+ (LTS recommended)
+- **pnpm** 10+ (package manager)
+- **PostgreSQL** 14+ (or use Vercel Postgres/Supabase)
+- **Git**
+
+Install pnpm globally:
+
+```bash
+npm install -g pnpm@10.22.0
+```
+
+### 2. Clone and Install
+
+```bash
+git clone https://github.com/wyattowalsh/gistlens.git
+cd gistlens
+pnpm install
+```
+
+### 3. Environment Variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration:
+
+```env
+# Database - Use Vercel Postgres or your own PostgreSQL
+POSTGRES_URL="postgresql://user:password@localhost:5432/gistlens"
+POSTGRES_PRISMA_URL="postgresql://user:password@localhost:5432/gistlens?pgbouncer=true"
+POSTGRES_URL_NON_POOLING="postgresql://user:password@localhost:5432/gistlens"
+
+# Auth.js - Generate a random secret
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-generated-secret-here"
+
+# GitHub OAuth
+GITHUB_CLIENT_ID="Ov23liI0dV9Eyrz71PPu"
+GITHUB_CLIENT_SECRET="d069f942ee3a3fce42622fc740a10148aba80b6a"
+GITHUB_REDIRECT_URI="https://gistlens.w4w.dev/auth/github/callback"
+
+# PostHog (Optional)
+NEXT_PUBLIC_POSTHOG_KEY=""
+NEXT_PUBLIC_POSTHOG_HOST="https://app.posthog.com"
+
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+Generate Auth.js secret:
+
+```bash
+openssl rand -base64 32
+```
+
+### 4. Database Setup
+
+#### Option A: Docker Compose (Recommended for Local Development)
+
+Create `docker-compose.yml` in project root:
+
+```yaml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gistlens
+      POSTGRES_PASSWORD: gistlens
+      POSTGRES_DB: gistlens
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./lib/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+
+volumes:
+  postgres_data:
+```
+
+Start PostgreSQL:
+
+```bash
+docker-compose up -d
+```
+
+Update `.env.local`:
+
+```env
+POSTGRES_URL="postgresql://gistlens:gistlens@localhost:5432/gistlens"
+```
+
+#### Option B: Local PostgreSQL
+
+Install PostgreSQL and create database:
+
+```bash
+# macOS
+brew install postgresql@16
+brew services start postgresql@16
+
+# Create database
+createdb gistlens
+```
+
+Run schema:
+
+```bash
+psql postgresql://localhost:5432/gistlens -f lib/db/schema.sql
+```
+
+#### Option C: Vercel Postgres (Recommended for Production)
+
+1. Go to your Vercel project
+2. Navigate to Storage tab
+3. Create new Postgres database
+4. Copy connection strings to `.env.local`
+5. Run schema in Vercel dashboard SQL editor
+
+#### Option D: Supabase
+
+1. Create project at supabase.com
+2. Go to SQL Editor
+3. Paste contents of `lib/db/schema.sql`
+4. Execute
+5. Copy connection string from Settings → Database
+
+### 5. Run Development Server
+
+```bash
+pnpm dev
+```
+
+Visit http://localhost:3000 to see the application!
+
+### 6. Run Documentation Site (Optional)
+
+```bash
+pnpm docs:dev
+```
+
+Visit http://localhost:3001 for documentation!
+
+## Migrating from v1.0
+
+If you were using the original Vite/React version of GistLens:
+
+### Configuration Changes
+
+**v1.0 (Vite/React):**
+- Client-side only application
+- LocalStorage for settings
+- GitHub tokens in localStorage
+- Manual token entry
+
+**v2.0 (Next.js):**
+- Server-side rendering + API routes
+- PostgreSQL for settings
+- OAuth flow with server-side tokens
+- Automatic authentication
+
+### Data Migration
+
+#### Settings
+
+Settings from v1.0 localStorage need to be manually re-configured in v2.0:
+
+1. Open Settings dialog
+2. Re-configure your preferences:
+   - Theme (dark/light)
+   - Font size
+   - Syntax highlighting
+   - Line numbers
+   - Auto-preview markdown
+3. Settings now persist in PostgreSQL
+
+#### Custom Styles
+
+Custom styles from v1.0 can be imported:
+
+1. Open v1.0 in browser
+2. Export your custom styles (if feature was available)
+3. In v2.0, go to Settings → Custom Styles
+4. Import your saved styles
+5. Styles now persist per-user in database
+
+#### History
+
+Gist viewing history is now tracked per-user:
+
+- v1.0 history was localStorage-based (browser-specific)
+- v2.0 history is database-based (account-specific)
+- History syncs across devices when logged in
+
+### Authentication Migration
+
+**v1.0 Manual Token:**
+
+If you were using a personal access token:
+
+1. Delete token from v1.0 localStorage
+2. In v2.0, click "Sign in with GitHub"
+3. Complete OAuth flow
+4. Token now managed server-side securely
+
+**v2.0 OAuth Flow:**
+
+The new authentication is much more secure:
+
+- No tokens exposed to client
+- Automatic refresh
+- Database-backed sessions
+- Access to private gists
+
+### Feature Parity
+
+All v1.0 features are available in v2.0:
+
+| Feature | v1.0 | v2.0 | Notes |
+|---------|------|------|-------|
+| View gists | ✅ | ✅ | Enhanced with SSR |
+| Syntax highlighting | ✅ | ✅ | Same highlighter |
+| Markdown preview | ✅ | ✅ | Improved rendering |
+| Dark/light themes | ✅ | ✅ | Persisted in DB |
+| Custom styles | ✅ | ✅ | Database-backed |
+| Media viewers | ✅ | ✅ | Same features |
+| Share functionality | ✅ | ✅ | Enhanced |
+| GitHub auth | Manual | OAuth | Server-side OAuth |
+| Private gists | ✅ | ✅ | More secure |
+| Telemetry | ✅ | ✅ | Opt-in only |
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push code to GitHub
+2. Import project in Vercel dashboard
+3. Add Vercel Postgres from Storage tab
+4. Set environment variables
+5. Deploy
+
+Vercel automatically:
+- Detects Next.js
+- Configures build settings
+- Provides PostgreSQL database
+- Handles SSL certificates
+- Enables CDN for static assets
+
+### Docker
+
+Build and run with Docker:
+
+```dockerfile
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install
+COPY . .
+RUN pnpm build
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./
+RUN npm install -g pnpm && pnpm install --prod
+EXPOSE 3000
+CMD ["pnpm", "start"]
+```
+
+### Other Platforms
+
+GistLens v2.0 can be deployed to:
+- **Railway** - One-click deploy with PostgreSQL
+- **Render** - Supports PostgreSQL add-on
+- **Fly.io** - Global edge deployment
+- **DigitalOcean App Platform** - Managed PostgreSQL
+- **AWS** - EC2 + RDS
+- **Google Cloud** - Cloud Run + Cloud SQL
+- **Azure** - App Service + PostgreSQL
+
+Requirements:
+- Node.js 20+ runtime
+- PostgreSQL 14+ database
+- Environment variables configured
+
+## Troubleshooting
+
+### Build Errors
+
+**Error: Cannot find module '@next/mdx'**
+
+Solution: Docs directory is excluded from root build. Already fixed in v2.0.
+
+**Error: Database connection failed**
+
+Solution: Check PostgreSQL is running and connection string is correct:
+
+```bash
+psql $POSTGRES_URL -c "SELECT version();"
+```
+
+**Error: Auth.js session not working**
+
+Solution: Ensure `NEXTAUTH_SECRET` is set and `NEXTAUTH_URL` matches your domain.
+
+### Runtime Issues
+
+**Private gists not showing**
+
+1. Check you're authenticated (user icon in header)
+2. Verify GitHub OAuth scopes include `gist`
+3. Check browser console for API errors
+4. Verify `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are correct
+
+**Settings not persisting**
+
+1. Ensure PostgreSQL is connected
+2. Check `user_settings` table exists
+3. Verify user is authenticated
+4. Check browser console for errors
+
+**Custom styles not applying**
+
+1. Ensure styles are enabled in Settings
+2. Check `custom_styles` table has your styles
+3. Verify CSS syntax is valid
+4. Check browser DevTools for CSS errors
+
+### Database Issues
+
+**Schema not created**
+
+Run schema manually:
+
+```bash
+psql $POSTGRES_URL -f lib/db/schema.sql
+```
+
+**Tables missing**
+
+Check if tables exist:
+
+```bash
+psql $POSTGRES_URL -c "\dt"
+```
+
+Expected tables:
+- users
+- sessions
+- accounts
+- user_settings
+- gist_history
+- custom_styles
+- verification_tokens
+
+### Getting Help
+
+If you encounter issues:
+
+1. Check [LOCAL_DEVELOPMENT.md](../LOCAL_DEVELOPMENT.md) for detailed setup
+2. Review [AGENTS.md](../.github/AGENTS.md) for technical details
+3. Open issue on GitHub with:
+   - Error message
+   - Steps to reproduce
+   - Environment (OS, Node version, etc.)
+   - Screenshots if applicable
+
+## Next Steps
+
+After successful migration:
+
+1. **Explore Features** - Check out the [Features](./features) page
+2. **Configure Auth.js** - Review [Auth.js Setup](./auth) guide
+3. **Customize** - Add custom styles for your preferred look
+4. **Share** - Share your favorite gists with the new sharing features
+
+Welcome to GistLens v2.0! 🎉
