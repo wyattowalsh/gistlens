@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Search, 
   Moon, 
@@ -21,12 +21,20 @@ import {
   FileText,
   Star,
   Sparkles,
-  Zap
+  Zap,
+  Home,
+  User,
+  TrendingUp,
+  ChevronRight,
+  Rocket,
+  BookOpen,
+  Lightbulb
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { cn } from '@/lib/utils';
 
@@ -47,13 +55,110 @@ import { cn } from '@/lib/utils';
 
 // --- Utility Functions ---
 
-const DEFAULT_GIST_ID = 'bb3bbe2ecc3dd810a14942e66fb87094';
+// Curated list of high-quality GitHub users known for excellent gists
+const FEATURED_USERS = [
+  'gaearon', // React core team
+  'addyosmani', // Google Chrome team
+  'sindresorhus', // Prolific open source dev
+  'paulirish', // Chrome DevTools
+  'substack', // Node.js pioneer
+  'tj', // Express.js creator
+  'mbostock', // D3.js creator
+  'defunkt', // GitHub founder
+  'holman', // GitHub
+  'mojombo', // GitHub co-founder
+];
 
-const parseGistId = (input) => {
+// Get a diverse set of gists using an intelligent algorithm
+const getSmartFeaturedGists = (allGists) => {
+  if (!allGists || allGists.length === 0) return [];
+  
+  // Score each gist based on multiple factors
+  const scoredGists = allGists.map(gist => {
+    let score = 0;
+    const fileCount = Object.keys(gist.files).length;
+    const hasDescription = !!gist.description;
+    const updatedDate = new Date(gist.updated_at);
+    const daysSinceUpdate = (Date.now() - updatedDate.getTime()) / (1000 * 60 * 60 * 24);
+    
+    // More files = more comprehensive (but not too many)
+    score += Math.min(fileCount * 10, 30);
+    
+    // Has description = better documentation
+    if (hasDescription) score += 20;
+    
+    // Longer description = more effort
+    if (gist.description) {
+      score += Math.min(gist.description.length / 10, 20);
+    }
+    
+    // Recent updates are good (within last year)
+    if (daysSinceUpdate < 365) {
+      score += Math.max(0, 20 - daysSinceUpdate / 18.25);
+    }
+    
+    // Public gists get a boost
+    if (gist.public) score += 10;
+    
+    // Variety boost: check file types
+    const fileTypes = new Set(
+      Object.values(gist.files).map(f => 
+        f.filename.split('.').pop()?.toLowerCase() || 'txt'
+      )
+    );
+    score += fileTypes.size * 5;
+    
+    return { ...gist, score };
+  });
+  
+  // Sort by score and return top results
+  return scoredGists
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6); // Get top 6 for diversity
+};
+
+// Fallback featured gists (used if API fails or while loading)
+const DEFAULT_FEATURED_GISTS = [
+  {
+    id: 'bb3bbe2ecc3dd810a14942e66fb87094',
+    title: 'React Hooks Cheatsheet',
+    description: 'Comprehensive guide to React Hooks with examples',
+    category: 'Tutorial',
+    icon: BookOpen,
+  },
+  {
+    id: '4e83c70abf3fe294bbdf',
+    title: 'CSS Grid Layout Guide',
+    description: 'Modern CSS Grid techniques and patterns',
+    category: 'Tutorial',
+    icon: Lightbulb,
+  },
+  {
+    id: 'a2a8e8e6d7f1a3b2c4d5',
+    title: 'JavaScript Tips & Tricks',
+    description: 'Useful JavaScript snippets and best practices',
+    category: 'Code',
+    icon: Sparkles,
+  },
+];
+
+const parseInput = (input) => {
   if (!input) return null;
-  const urlMatch = input.match(/gist\.github\.com\/(?:[^/]+\/)?([a-f0-9]+)/i);
-  if (urlMatch) return urlMatch[1];
-  if (/^[a-f0-9]+$/i.test(input)) return input;
+  
+  // Try to parse as gist URL (with ID)
+  const gistUrlMatch = input.match(/gist\.github\.com\/(?:[^/]+\/)?([a-f0-9]+)/i);
+  if (gistUrlMatch) return { type: 'gist', value: gistUrlMatch[1] };
+  
+  // Try to parse as user URL (https://gist.github.com/username)
+  const userUrlMatch = input.match(/gist\.github\.com\/([^/]+)\/?$/i);
+  if (userUrlMatch) return { type: 'user', value: userUrlMatch[1] };
+  
+  // Try to parse as just gist ID (hex string)
+  if (/^[a-f0-9]+$/i.test(input)) return { type: 'gist', value: input };
+  
+  // Assume it's a username if it's alphanumeric with hyphens/underscores
+  if (/^[a-z0-9_-]+$/i.test(input)) return { type: 'user', value: input };
+  
   return null;
 };
 
@@ -73,12 +178,23 @@ const isMarkdownFile = (filename, language) => {
 
 // --- Components ---
 
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center p-12">
-    <div className="relative w-16 h-16">
-      <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
-      <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-      <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-primary animate-pulse" />
+const LoadingSkeleton = () => (
+  <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-pulse">
+    {/* Header Skeleton */}
+    <div className="p-6 md:p-8 rounded-2xl border bg-card">
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-xl bg-muted"></div>
+        <div className="flex-1 space-y-3">
+          <div className="h-8 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
+        </div>
+      </div>
+    </div>
+    {/* Content Skeleton */}
+    <div className="rounded-2xl border bg-card p-6 space-y-4">
+      <div className="h-4 bg-muted rounded w-full"></div>
+      <div className="h-4 bg-muted rounded w-5/6"></div>
+      <div className="h-4 bg-muted rounded w-4/6"></div>
     </div>
   </div>
 );
@@ -102,16 +218,149 @@ const ErrorDisplay = ({ message, onRetry }) => (
 export default function GistLens() {
   // State
   const [input, setInput] = useState('');
-  const [currentGistId, setCurrentGistId] = useState(DEFAULT_GIST_ID);
+  const [currentGistId, setCurrentGistId] = useState(null);
+  const [currentUsername, setCurrentUsername] = useState(null);
+  const [view, setView] = useState('home'); // 'home', 'gist', 'user'
   const [gistData, setGistData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [userGists, setUserGists] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [darkMode, setDarkMode] = useState(true);
   const [history, setHistory] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start minimized on homepage
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [featuredGists, setFeaturedGists] = useState(DEFAULT_FEATURED_GISTS);
+  const [loadingFeatured, setLoadingFeatured] = useState(false);
+
+  // Handlers (defined early to avoid hoisting issues)
+  const addToHistory = useCallback((data) => {
+    setHistory(prev => {
+      const newEntry = {
+        id: data.id,
+        description: data.description || 'No description',
+        owner: data.owner?.login || 'Anonymous',
+        avatar: data.owner?.avatar_url,
+        files: Object.keys(data.files).length,
+        date: new Date().toISOString()
+      };
+      const filtered = prev.filter(h => h.id !== data.id);
+      const updated = [newEntry, ...filtered].slice(0, 10);
+      localStorage.setItem('gistlens-history', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const fetchGist = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+    setActiveFileIndex(0);
+    
+    try {
+      const response = await fetch(`https://api.github.com/gists/${id}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('Gist not found. Check the ID or URL.');
+        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+        throw new Error('Failed to fetch Gist data.');
+      }
+
+      const data = await response.json();
+      setGistData(data);
+      addToHistory(data);
+      setInput(`https://gist.github.com/${data.owner?.login || 'anonymous'}/${data.id}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [addToHistory]);
+
+  const fetchUserGists = useCallback(async (username) => {
+    setLoading(true);
+    setError(null);
+    setUserGists([]);
+    
+    try {
+      const response = await fetch(`https://api.github.com/users/${username}/gists`);
+      
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('User not found. Check the username.');
+        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+        throw new Error('Failed to fetch user gists.');
+      }
+
+      const data = await response.json();
+      setUserGists(data);
+      setInput(`https://gist.github.com/${username}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch featured gists using smart algorithm
+  const fetchFeaturedGists = useCallback(async () => {
+    setLoadingFeatured(true);
+    try {
+      // Fetch gists from multiple featured users
+      const randomUsers = [...FEATURED_USERS]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3); // Pick 3 random featured users
+      
+      const gistPromises = randomUsers.map(user =>
+        fetch(`https://api.github.com/users/${user}/gists?per_page=30`)
+          .then(res => res.ok ? res.json() : [])
+          .catch(() => [])
+      );
+      
+      const results = await Promise.all(gistPromises);
+      const allGists = results.flat();
+      
+      // Use smart algorithm to select best gists
+      const smartSelection = getSmartFeaturedGists(allGists);
+      
+      // Convert to display format
+      const featured = smartSelection.slice(0, 3).map((gist) => {
+        const firstFile = Object.values(gist.files)[0];
+        const ext = firstFile?.filename.split('.').pop()?.toLowerCase();
+        
+        // Determine category and icon based on file type
+        let category = 'Code';
+        let icon = Sparkles;
+        
+        if (ext === 'md' || ext === 'mdx') {
+          category = 'Tutorial';
+          icon = BookOpen;
+        } else if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) {
+          category = 'Code';
+          icon = Sparkles;
+        } else if (['css', 'scss', 'html'].includes(ext)) {
+          category = 'Design';
+          icon = Lightbulb;
+        }
+        
+        return {
+          id: gist.id,
+          title: gist.description || firstFile?.filename || 'Untitled Gist',
+          description: gist.description || `By ${gist.owner.login}`,
+          category,
+          icon,
+        };
+      });
+      
+      if (featured.length > 0) {
+        setFeaturedGists(featured);
+      }
+    } catch (err) {
+      console.error('Failed to fetch featured gists:', err);
+      // Keep default gists on error
+    } finally {
+      setLoadingFeatured(false);
+    }
+  }, []);
 
   // Effects
   useEffect(() => {
@@ -122,6 +371,9 @@ export default function GistLens() {
     // Load history
     const savedHistory = localStorage.getItem('gistlens-history');
     if (savedHistory) setHistory(JSON.parse(savedHistory));
+
+    // Fetch featured gists on mount
+    fetchFeaturedGists();
 
     // Inject PrismJS for fallback syntax highlighting
     const loadPrism = async () => {
@@ -146,7 +398,7 @@ export default function GistLens() {
       }
     };
     loadPrism();
-  }, []);
+  }, [fetchFeaturedGists]);
 
   useEffect(() => {
     if (darkMode) {
@@ -158,9 +410,16 @@ export default function GistLens() {
   }, [darkMode]);
 
   useEffect(() => {
-    fetchGist(currentGistId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentGistId]);
+    if (currentGistId && view === 'gist') {
+      fetchGist(currentGistId);
+    }
+  }, [currentGistId, view, fetchGist]);
+
+  useEffect(() => {
+    if (currentUsername && view === 'user') {
+      fetchUserGists(currentUsername);
+    }
+  }, [currentUsername, view, fetchUserGists]);
 
   useEffect(() => {
     // Reset preview mode when switching files or gists
@@ -197,62 +456,86 @@ export default function GistLens() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [previewMode, gistData, activeFileIndex]);
 
-  // Handlers
-  const fetchGist = async (id) => {
-    setLoading(true);
-    setError(null);
-    setActiveFileIndex(0);
-    
-    try {
-      const response = await fetch(`https://api.github.com/gists/${id}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) throw new Error('Gist not found. Check the ID or URL.');
-        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
-        throw new Error('Failed to fetch Gist data.');
-      }
-
-      const data = await response.json();
-      setGistData(data);
-      addToHistory(data);
-      setInput(`https://gist.github.com/${data.owner?.login || 'anonymous'}/${data.id}`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addToHistory = (data) => {
-    setHistory(prev => {
-      const newEntry = {
-        id: data.id,
-        description: data.description || 'No description',
-        owner: data.owner?.login || 'Anonymous',
-        avatar: data.owner?.avatar_url,
-        files: Object.keys(data.files).length,
-        date: new Date().toISOString()
-      };
-      const filtered = prev.filter(h => h.id !== data.id);
-      const updated = [newEntry, ...filtered].slice(0, 10);
-      localStorage.setItem('gistlens-history', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    const id = parseGistId(input);
-    if (id) {
-      setCurrentGistId(id);
+    const parsed = parseInput(input);
+    if (parsed) {
+      if (parsed.type === 'gist') {
+        setCurrentGistId(parsed.value);
+        setCurrentUsername(null);
+        setView('gist');
+      } else if (parsed.type === 'user') {
+        setCurrentUsername(parsed.value);
+        setCurrentGistId(null);
+        setView('user');
+      }
       if (window.innerWidth < 1024) setSidebarOpen(false);
     } else {
-      setError('Invalid Gist URL or ID format.');
+      setError('Invalid input. Enter a gist ID, gist URL, username, or user URL.');
     }
   };
+
+  const handleFeaturedGistClick = (gistId) => {
+    setCurrentGistId(gistId);
+    setCurrentUsername(null);
+    setView('gist');
+    // Open sidebar on desktop when viewing a gist for history access
+    if (window.innerWidth >= 1024) setSidebarOpen(true);
+    else setSidebarOpen(false);
+  };
+
+  const handleUserGistClick = (gistId) => {
+    setCurrentGistId(gistId);
+    setView('gist');
+    // Open sidebar on desktop when viewing a gist for history access
+    if (window.innerWidth >= 1024) setSidebarOpen(true);
+    else setSidebarOpen(false);
+  };
+
+  const handleBackToHome = useCallback(() => {
+    setView('home');
+    setCurrentGistId(null);
+    setCurrentUsername(null);
+    setGistData(null);
+    setUserGists([]);
+    setError(null);
+    // Close sidebar when going back to home
+    setSidebarOpen(false);
+  }, []);
+
+  // Keyboard shortcuts - placed after handleBackToHome is defined
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Cmd/Ctrl + K to focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.querySelector('input[type="text"]')?.focus();
+      }
+      // Cmd/Ctrl + H to go home
+      if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
+        e.preventDefault();
+        handleBackToHome();
+      }
+      // Cmd/Ctrl + D to toggle dark mode
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+        e.preventDefault();
+        setDarkMode(prev => !prev);
+      }
+      // Escape to close sidebar on mobile
+      if (e.key === 'Escape' && sidebarOpen && window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [sidebarOpen, handleBackToHome]);
 
   const handleHistoryClick = (id) => {
     setCurrentGistId(id);
+    setCurrentUsername(null);
+    setView('gist');
+    // Keep sidebar open on desktop, close on mobile
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
@@ -267,90 +550,147 @@ export default function GistLens() {
   const activeFile = files[activeFileIndex];
 
   return (
-    <div className={cn(
-      "min-h-screen flex flex-col transition-colors duration-300",
-      "bg-gradient-to-br from-background via-background to-muted/20"
-    )}>
-      
-      {/* --- Enhanced Navbar --- */}
-      <nav className={cn(
-        "sticky top-0 z-30 backdrop-blur-xl border-b px-4 h-16 flex items-center justify-between",
-        "bg-background/80 shadow-sm"
+    <TooltipProvider delayDuration={300}>
+      <div className={cn(
+        "min-h-screen flex flex-col transition-colors duration-300",
+        "bg-gradient-to-br from-background via-background to-muted/20"
       )}>
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hover:bg-primary/10"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-75"></div>
-              <div className="relative p-2 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl">
-                <Code2 className="w-5 h-5 text-white" />
+        
+        {/* --- Enhanced Navbar --- */}
+        <nav className={cn(
+          "sticky top-0 z-30 backdrop-blur-xl border-b px-2 sm:px-4 h-16 flex items-center justify-between gap-2",
+          "bg-background/80 shadow-sm"
+        )}>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="hover:bg-primary/10 shrink-0"
+                  aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{sidebarOpen ? "Close sidebar" : "Open sidebar"} (Esc)</p>
+              </TooltipContent>
+            </Tooltip>
+          {view !== 'home' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleBackToHome}
+                  className="hover:bg-primary/10 shrink-0"
+                >
+                  <Home className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Home</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Return to homepage (⌘H)</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={handleBackToHome}>
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-75"></div>
+                  <div className="relative p-2 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl">
+                    <Code2 className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                <span className="hidden sm:inline text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                  GistLens
+                </span>
               </div>
-            </div>
-            <span className="hidden sm:inline text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-              GistLens
-            </span>
-          </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Go to homepage</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 max-w-2xl mx-4">
+        <form onSubmit={handleSubmit} className="flex-1 max-w-2xl mx-2 sm:mx-4">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste GitHub Gist URL or ID..."
+              placeholder="Paste Gist URL/ID, Username, or User URL..."
               className={cn(
-                "w-full pl-10 pr-20 py-2.5 rounded-xl text-sm font-medium",
+                "w-full pl-10 pr-16 sm:pr-20 py-2.5 rounded-xl text-sm font-medium",
                 "bg-muted/50 border border-border",
                 "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                 "placeholder:text-muted-foreground",
                 "transition-all duration-200"
               )}
             />
-            <Button 
-              type="submit"
-              size="sm"
-              className="absolute right-2 top-1/2 -translate-y-1/2 shadow-md"
-            >
-              Load
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  type="submit"
+                  size="sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 shadow-md"
+                >
+                  Load
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Load gist or user (⌘K to focus)</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </form>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setDarkMode(!darkMode)}
-            className="hover:bg-primary/10 relative overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-            {darkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-700" />}
-          </Button>
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setDarkMode(!darkMode)}
+                className="hover:bg-primary/10 relative overflow-hidden group shrink-0"
+                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                {darkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-700" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Toggle theme (⌘D)</p>
+            </TooltipContent>
+          </Tooltip>
           
           {gistData && (
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="hidden md:flex hover:bg-primary/10"
-            >
-              <a
-                href={gistData.html_url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className="hidden md:flex hover:bg-primary/10 shrink-0"
+                >
+                  <a
+                    href={gistData.html_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="View on GitHub"
+                  >
+                    <Github className="w-5 h-5" />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View on GitHub</p>
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
       </nav>
@@ -448,36 +788,51 @@ export default function GistLens() {
 
         {/* --- Main Content --- */}
         <main className="flex-1 overflow-y-auto relative">
-          {loading ? (
-            <LoadingSpinner />
+          {view === 'home' ? (
+            <HomePage 
+              onFeaturedGistClick={handleFeaturedGistClick}
+              featuredGists={featuredGists}
+              loadingFeatured={loadingFeatured}
+            />
+          ) : loading ? (
+            <LoadingSkeleton />
           ) : error ? (
             <div className="flex items-center justify-center h-full p-4">
-              <ErrorDisplay message={error} onRetry={() => fetchGist(currentGistId)} />
+              <ErrorDisplay 
+                message={error} 
+                onRetry={() => view === 'gist' ? fetchGist(currentGistId) : fetchUserGists(currentUsername)} 
+              />
             </div>
+          ) : view === 'user' && userGists.length > 0 ? (
+            <UserGistsView 
+              username={currentUsername}
+              gists={userGists}
+              onGistClick={handleUserGistClick}
+            />
           ) : gistData ? (
             <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
               
               {/* Enhanced Header */}
               <div className={cn(
-                "p-6 md:p-8 rounded-2xl border shadow-lg",
+                "p-4 sm:p-6 md:p-8 rounded-2xl border shadow-lg",
                 "bg-gradient-to-br from-card via-card to-muted/20",
                 "backdrop-blur-sm"
               )}>
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 sm:gap-6">
+                  <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                    <div className="relative shrink-0">
                       <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-xl blur-md opacity-50"></div>
                       <img 
                         src={gistData.owner?.avatar_url || 'https://github.com/ghost.png'} 
                         alt="Owner" 
-                        className="relative w-14 h-14 rounded-xl shadow-lg ring-2 ring-background"
+                        className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl shadow-lg ring-2 ring-background"
                       />
                     </div>
-                    <div className="flex-1">
-                      <h1 className="text-2xl font-bold mb-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text truncate">
                         {Object.keys(gistData.files)[0]}
                       </h1>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         Created by{' '}
                         <span className="font-semibold text-primary hover:underline cursor-pointer">
                           {gistData.owner?.login || 'Anonymous'}
@@ -486,31 +841,39 @@ export default function GistLens() {
                         Updated {new Date(gistData.updated_at).toLocaleDateString()}
                       </p>
                       {gistData.description && (
-                        <div className="mt-4 p-3 rounded-lg bg-muted/50 border-l-4 border-primary">
-                          <p className="text-sm italic">
+                        <div className="mt-3 sm:mt-4 p-2 sm:p-3 rounded-lg bg-muted/50 border-l-4 border-primary">
+                          <p className="text-xs sm:text-sm italic">
                             {gistData.description}
                           </p>
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Button 
-                      variant="outline"
-                      asChild
-                      className="shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      <a 
-                        href={gistData.html_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Open in GitHub
-                      </a>
-                    </Button>
-                    <div className="px-4 py-2 text-sm font-mono rounded-lg border bg-muted/50 flex items-center gap-2">
-                      <FileCode className="w-4 h-4 text-primary" />
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline"
+                          asChild
+                          className="shadow-sm hover:shadow-md transition-shadow text-xs sm:text-sm"
+                        >
+                          <a 
+                            href={gistData.html_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                            <span className="hidden sm:inline">Open in GitHub</span>
+                            <span className="sm:hidden">GitHub</span>
+                          </a>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Open in GitHub</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <div className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-mono rounded-lg border bg-muted/50 flex items-center gap-1.5 sm:gap-2">
+                      <FileCode className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                       {Object.keys(gistData.files).length} File(s)
                     </div>
                   </div>
@@ -589,6 +952,7 @@ export default function GistLens() {
         </main>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 
@@ -658,66 +1022,94 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
 
       <div className="flex items-center gap-1">
         {isMarkdown && (
-          <Button
-            variant={previewMode ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setPreviewMode(!previewMode)}
-            className="h-8"
-          >
-            {previewMode ? (
-              <>
-                <FileText className="w-3.5 h-3.5 mr-1.5" />
-                Code
-              </>
-            ) : (
-              <>
-                <Eye className="w-3.5 h-3.5 mr-1.5" />
-                Preview
-              </>
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={previewMode ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setPreviewMode(!previewMode)}
+                className="h-8"
+              >
+                {previewMode ? (
+                  <>
+                    <FileText className="w-3.5 h-3.5 mr-1.5" />
+                    <span className="hidden sm:inline">Code</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3.5 h-3.5 mr-1.5" />
+                    <span className="hidden sm:inline">Preview</span>
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{previewMode ? "View code" : "Preview markdown"}</p>
+            </TooltipContent>
+          </Tooltip>
         )}
 
-        <Button 
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className={cn("h-8", copied && "text-green-500")}
-        >
-          {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5 mr-1.5" />
-              Copied!
-            </>
-          ) : (
-            <>
-              <Copy className="w-3.5 h-3.5 mr-1.5" />
-              Copy
-            </>
-          )}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={handleCopy}
+              className={cn("h-8", copied && "text-green-500")}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="hidden sm:inline">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="hidden sm:inline">Copy</span>
+                </>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Copy to clipboard</p>
+          </TooltipContent>
+        </Tooltip>
         
-        <Button 
-          variant="ghost"
-          size="sm"
-          onClick={handleDownload}
-          className="h-8"
-        >
-          <Download className="w-3.5 h-3.5 mr-1.5" />
-          <span className="hidden sm:inline">Download</span>
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={handleDownload}
+              className="h-8"
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              <span className="hidden sm:inline">Download</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Download file</p>
+          </TooltipContent>
+        </Tooltip>
 
         <Separator orientation="vertical" className="h-4 mx-1" />
 
-        <Button 
-          variant="ghost"
-          size="icon"
-          onClick={toggleFullscreen}
-          className="h-8 w-8"
-          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-        >
-          {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost"
+              size="icon"
+              onClick={toggleFullscreen}
+              className="h-8 w-8"
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
@@ -734,7 +1126,7 @@ const CodeBlock = ({ content, language }) => {
   }, [content, language]);
 
   return (
-    <div className="text-sm font-mono leading-relaxed p-6 bg-muted/20">
+    <div className="text-xs sm:text-sm font-mono leading-relaxed p-4 sm:p-6 bg-muted/20 overflow-x-auto">
       <pre 
         className={cn(
           langClass,
@@ -749,6 +1141,259 @@ const CodeBlock = ({ content, language }) => {
           {content}
         </code>
       </pre>
+    </div>
+  );
+};
+
+// --- HomePage Component ---
+const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
+  return (
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 sm:space-y-10 md:space-y-12">
+      {/* Hero Section */}
+      <div className="text-center space-y-4 sm:space-y-6 py-8 sm:py-12 md:py-20">
+        <div className="relative inline-block px-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-3xl opacity-30 animate-pulse"></div>
+          <h1 className="relative text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+            GistLens
+          </h1>
+        </div>
+        <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
+          Beautiful GitHub Gist Viewer with Enhanced Features
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 pt-4 sm:pt-6 px-4">
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
+            <Rocket className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <span className="text-xs sm:text-sm font-medium">Modern UI</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <span className="text-xs sm:text-sm font-medium">Syntax Highlighting</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <span className="text-xs sm:text-sm font-medium">Markdown Preview</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Grid */}
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <FeatureCard
+          icon={FileCode}
+          title="View Any Gist"
+          description="Paste a gist URL or ID to view beautifully rendered code with syntax highlighting"
+          gradient="from-blue-500 to-cyan-500"
+        />
+        <FeatureCard
+          icon={User}
+          title="Browse User Gists"
+          description="Enter a username to explore all public gists from any GitHub user"
+          gradient="from-purple-500 to-pink-500"
+        />
+        <FeatureCard
+          icon={TrendingUp}
+          title="Featured Gists"
+          description="Discover awesome gists curated for learning and inspiration"
+          gradient="from-orange-500 to-red-500"
+        />
+      </div>
+
+      {/* Featured Gists Section */}
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+            <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-yellow-500" />
+            Featured Gists
+          </h2>
+          <div className="flex items-center gap-2">
+            {loadingFeatured && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Sparkles className="w-4 h-4 animate-pulse" />
+                <span className="hidden sm:inline">Refreshing...</span>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          {featuredGists.map((gist) => (
+            <FeaturedGistCard
+              key={gist.id}
+              gist={gist}
+              onClick={() => onFeaturedGistClick(gist.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* How to Use Section */}
+      <div className="bg-gradient-to-br from-card via-card to-muted/20 rounded-2xl border p-4 sm:p-6 md:p-8 lg:p-12 space-y-4 sm:space-y-6">
+        <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+          <Lightbulb className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />
+          How to Use
+        </h2>
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+          <HowToCard
+            number="1"
+            title="View a Specific Gist"
+            description="Paste a gist URL (e.g., https://gist.github.com/user/abc123) or just the ID"
+          />
+          <HowToCard
+            number="2"
+            title="Browse User Gists"
+            description="Enter a username (e.g., 'wyattowalsh') or user URL to see all their public gists"
+          />
+          <HowToCard
+            number="3"
+            title="Explore Features"
+            description="Use tabs for multi-file gists, toggle preview for markdown, and download files"
+          />
+          <HowToCard
+            number="4"
+            title="Customize Experience"
+            description="Switch between dark/light mode and access your viewing history in the sidebar"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FeatureCard = ({ icon: Icon, title, description, gradient }) => (
+  <div className="group relative p-4 sm:p-6 rounded-2xl border bg-card hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+    <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity", gradient)}></div>
+    <div className="relative space-y-2 sm:space-y-3">
+      <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br flex items-center justify-center", gradient)}>
+        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+      </div>
+      <h3 className="text-lg sm:text-xl font-bold">{title}</h3>
+      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  </div>
+);
+
+const FeaturedGistCard = ({ gist, onClick }) => {
+  const Icon = gist.icon;
+  return (
+    <div
+      onClick={onClick}
+      className="group relative p-4 sm:p-6 rounded-2xl border bg-card cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div className="relative space-y-3 sm:space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="p-2 sm:p-3 rounded-xl bg-primary/10">
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          </div>
+          <div className="px-2 sm:px-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary">
+            {gist.category}
+          </div>
+        </div>
+        <div>
+          <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2 group-hover:text-primary transition-colors">
+            {gist.title}
+          </h3>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {gist.description}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-primary font-medium">
+          <span>View Gist</span>
+          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HowToCard = ({ number, title, description }) => (
+  <div className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+    <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-base sm:text-lg">
+      {number}
+    </div>
+    <div className="space-y-1">
+      <h4 className="text-sm sm:text-base font-bold">{title}</h4>
+      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{description}</p>
+    </div>
+  </div>
+);
+
+// --- UserGistsView Component ---
+const UserGistsView = ({ username, gists, onGistClick }) => {
+  return (
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+      {/* User Header */}
+      <div className="p-4 sm:p-6 md:p-8 rounded-2xl border shadow-lg bg-gradient-to-br from-card via-card to-muted/20">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+          {gists[0]?.owner?.avatar_url && (
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-xl blur-md opacity-50"></div>
+              <img
+                src={gists[0].owner.avatar_url}
+                alt={username}
+                className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl shadow-lg ring-2 ring-background"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 flex items-center gap-2">
+              <User className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+              <span className="truncate">{username}</span>
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {gists.length} Public Gist{gists.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Gists Grid */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {gists.map((gist) => (
+          <UserGistCard key={gist.id} gist={gist} onClick={() => onGistClick(gist.id)} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const UserGistCard = ({ gist, onClick }) => {
+  const files = Object.values(gist.files);
+  const fileCount = files.length;
+  const firstFile = files[0];
+
+  return (
+    <div
+      onClick={onClick}
+      className="group p-4 sm:p-5 rounded-xl border bg-card cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+    >
+      <div className="space-y-2 sm:space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <FileCode className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
+            <h3 className="font-semibold text-xs sm:text-sm truncate group-hover:text-primary transition-colors">
+              {firstFile?.filename || 'Untitled'}
+            </h3>
+          </div>
+          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
+        </div>
+        
+        {gist.description && (
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+            {gist.description}
+          </p>
+        )}
+
+        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+          <span className="flex items-center gap-1">
+            <FileCode className="w-3 h-3" />
+            {fileCount} file{fileCount !== 1 ? 's' : ''}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {new Date(gist.updated_at).toLocaleDateString()}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
