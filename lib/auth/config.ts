@@ -1,3 +1,12 @@
+/**
+ * Auth.js (NextAuth.js v5) Configuration
+ * 
+ * Note: NextAuth.js v5 has been rebranded as Auth.js
+ * - Package: next-auth (still uses this name)
+ * - Documentation: https://authjs.dev
+ * - This is the official v5 release with improved security and features
+ */
+
 import { NextAuthConfig } from 'next-auth';
 import GitHub from 'next-auth/providers/github';
 import { sql } from '@vercel/postgres';

@@ -19,7 +19,7 @@ GistLens has been successfully migrated from Vite + React to **Next.js 15** with
    - Custom styles per user
 
 3. **Secure Authentication**
-   - NextAuth.js v5 (Auth.js)
+   - Auth.js (Auth.js v5)
    - GitHub OAuth with server-side secret management
    - No client secrets exposed in frontend
    - Encrypted sessions with JWT
@@ -47,7 +47,7 @@ POSTGRES_URL="postgresql://user:password@localhost:5432/gistlens"
 POSTGRES_PRISMA_URL="postgresql://user:password@localhost:5432/gistlens?pgbouncer=true"
 POSTGRES_URL_NON_POOLING="postgresql://user:password@localhost:5432/gistlens"
 
-# NextAuth.js - Generate a random secret
+# Auth.js - Generate a random secret
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-secret-key-here-generate-with-openssl-rand-base64-32"
 
@@ -64,7 +64,7 @@ NEXT_PUBLIC_POSTHOG_HOST="https://app.posthog.com"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-### 2. Generate NextAuth Secret
+### 2. Generate Auth.js Secret
 
 ```bash
 openssl rand -base64 32
@@ -140,13 +140,13 @@ app/
 ├── layout.tsx (Root layout with SessionProvider)
 ├── page.tsx (Homepage - Server Component)
 ├── api/
-│   ├── auth/[...nextauth]/route.ts (NextAuth endpoints)
+│   ├── auth/[...nextauth]/route.ts (Auth.js endpoints)
 │   └── github/
 │       ├── gist/[id]/route.ts (Gist CRUD operations)
 │       └── gists/route.ts (List/create gists)
 lib/
 ├── auth/
-│   ├── config.ts (NextAuth configuration)
+│   ├── config.ts (Auth.js configuration)
 │   └── index.ts (Auth exports)
 └── db/
     ├── schema.sql (Database schema)
@@ -167,7 +167,7 @@ The PostgreSQL database includes these tables:
 
 ### Core Tables
 - **users** - User profiles from GitHub
-- **sessions** - NextAuth sessions
+- **sessions** - Auth.js sessions
 - **accounts** - OAuth provider accounts
 
 ### Feature Tables
@@ -314,7 +314,7 @@ npm start
 
 ### After
 - ✅ Client secret only in server-side `.env.local`
-- ✅ Sessions encrypted with NextAuth
+- ✅ Sessions encrypted with Auth.js
 - ✅ Tokens never sent to client
 - ✅ Full OAuth flow works securely
 - ✅ CSRF protection built-in
@@ -335,7 +335,7 @@ psql $POSTGRES_URL -c "\dt"
 psql $POSTGRES_URL -f lib/db/schema.sql
 ```
 
-### NextAuth Issues
+### Auth.js Issues
 
 1. Make sure `NEXTAUTH_SECRET` is set and is a random 32-character string
 2. Verify `NEXTAUTH_URL` matches your actual URL
@@ -376,7 +376,7 @@ npm run build
 
 For issues or questions:
 - Check the [Next.js documentation](https://nextjs.org/docs)
-- Review [NextAuth.js documentation](https://next-auth.js.org)
+- Review [Auth.js documentation](https://next-auth.js.org)
 - See [Vercel Postgres docs](https://vercel.com/docs/storage/vercel-postgres)
 
 ---

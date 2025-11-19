@@ -45,7 +45,7 @@ Functions implemented:
 
 ### 3. Secure Authentication ✅
 
-**NextAuth.js v5 Implementation:**
+**Auth.js (Auth.js v5) Implementation:**
 
 Files created:
 - `lib/auth/config.ts` - NextAuth configuration with GitHub provider
@@ -129,7 +129,7 @@ POSTGRES_URL="postgresql://..."
 POSTGRES_PRISMA_URL="postgresql://..."
 POSTGRES_URL_NON_POOLING="postgresql://..."
 
-# NextAuth.js
+# Auth.js
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
 
