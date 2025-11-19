@@ -115,12 +115,23 @@ const isMarkdownFile = (filename, language) => {
 
 // --- Components ---
 
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center p-12">
-    <div className="relative w-16 h-16">
-      <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
-      <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-      <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-primary animate-pulse" />
+const LoadingSkeleton = () => (
+  <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-pulse">
+    {/* Header Skeleton */}
+    <div className="p-6 md:p-8 rounded-2xl border bg-card">
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-xl bg-muted"></div>
+        <div className="flex-1 space-y-3">
+          <div className="h-8 bg-muted rounded w-3/4"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
+        </div>
+      </div>
+    </div>
+    {/* Content Skeleton */}
+    <div className="rounded-2xl border bg-card p-6 space-y-4">
+      <div className="h-4 bg-muted rounded w-full"></div>
+      <div className="h-4 bg-muted rounded w-5/6"></div>
+      <div className="h-4 bg-muted rounded w-4/6"></div>
     </div>
   </div>
 );
@@ -348,14 +359,42 @@ export default function GistLens() {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
-  const handleBackToHome = () => {
+  const handleBackToHome = useCallback(() => {
     setView('home');
     setCurrentGistId(null);
     setCurrentUsername(null);
     setGistData(null);
     setUserGists([]);
     setError(null);
-  };
+  }, []);
+
+  // Keyboard shortcuts - placed after handleBackToHome is defined
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Cmd/Ctrl + K to focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.querySelector('input[type="text"]')?.focus();
+      }
+      // Cmd/Ctrl + H to go home
+      if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
+        e.preventDefault();
+        handleBackToHome();
+      }
+      // Cmd/Ctrl + D to toggle dark mode
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+        e.preventDefault();
+        setDarkMode(prev => !prev);
+      }
+      // Escape to close sidebar on mobile
+      if (e.key === 'Escape' && sidebarOpen && window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [sidebarOpen, handleBackToHome]);
 
   const handleHistoryClick = (id) => {
     setCurrentGistId(id);
@@ -391,6 +430,7 @@ export default function GistLens() {
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="hover:bg-primary/10"
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
           >
             <Menu className="w-5 h-5" />
           </Button>
@@ -450,6 +490,7 @@ export default function GistLens() {
             size="icon"
             onClick={() => setDarkMode(!darkMode)}
             className="hover:bg-primary/10 relative overflow-hidden group"
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
             {darkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-700" />}
@@ -466,6 +507,7 @@ export default function GistLens() {
                 href={gistData.html_url}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="View on GitHub"
               >
                 <Github className="w-5 h-5" />
               </a>
@@ -572,7 +614,7 @@ export default function GistLens() {
               onFeaturedGistClick={handleFeaturedGistClick}
             />
           ) : loading ? (
-            <LoadingSpinner />
+            <LoadingSkeleton />
           ) : error ? (
             <div className="flex items-center justify-center h-full p-4">
               <ErrorDisplay 

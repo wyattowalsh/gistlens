@@ -58,16 +58,17 @@ npm run preview
 
 ## 🎯 Usage
 
-1. Open the application in your browser
-2. The default gist (`bb3bbe2ecc3dd810a14942e66fb87094`) will load automatically
-3. To view a different gist:
-   - Paste a GitHub Gist URL (e.g., `https://gist.github.com/username/gist-id`)
-   - Or paste just the gist ID (e.g., `bb3bbe2ecc3dd810a14942e66fb87094`)
-   - Click "Load" or press Enter
+1. Open the application in your browser - you'll see a beautiful homepage with featured gists
+2. To view content, you can:
+   - **View a specific gist**: Paste a GitHub Gist URL (e.g., `https://gist.github.com/username/gist-id`) or just the gist ID
+   - **Browse user gists**: Enter a username (e.g., `wyattowalsh`) or user URL (e.g., `https://gist.github.com/wyattowalsh`) to see all their public gists
+   - **Explore featured gists**: Click on any featured gist card on the homepage
+3. Click "Load" or press Enter to view the content
 4. Use the sidebar to view your recently accessed gists
-5. Toggle between files using the tabs
-6. For markdown files, use the Preview button to render them
+5. Toggle between files using the tabs (for multi-file gists)
+6. For markdown files, use the Preview button to render them beautifully
 7. Copy code with the Copy button or download files individually
+8. Use keyboard shortcuts for faster navigation (see below)
 
 ## 🛠️ Technology Stack
 
@@ -156,6 +157,25 @@ Supports 15+ languages including:
 - Hover effects and smooth animations
 - Easy removal of individual history items
 - Active state highlighting
+
+### User Gists Browser
+- Enter any GitHub username to view all their public gists
+- Beautiful grid layout with gist cards
+- Shows gist title, description, file count, and last update
+- Click any gist card to view the full gist
+
+### Homepage & Featured Gists
+- Beautiful landing page with gradient hero section
+- Feature cards highlighting key capabilities
+- Curated list of featured gists for learning
+- "How to Use" guide for new users
+- Smooth navigation between views
+
+### Keyboard Shortcuts
+- `Cmd/Ctrl + K` - Focus search input
+- `Cmd/Ctrl + H` - Return to homepage
+- `Cmd/Ctrl + D` - Toggle dark/light mode
+- `Escape` - Close sidebar (on mobile)
 
 ## 🤝 Contributing
 
