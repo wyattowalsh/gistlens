@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Settings, X, Check } from 'lucide-react';
+import { Settings, X, Check, Palette, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CustomStyleEditor } from '@/components/CustomStyleEditor';
+import { telemetry } from '@/lib/telemetry';
 
 export interface SettingsConfig {
   autoPreviewMarkdown: boolean;
@@ -11,9 +13,11 @@ export interface SettingsConfig {
   enableSyntaxHighlighting: boolean;
   autoLoadGists: boolean;
   historyLimit: number;
-  compactMode: boolean;
-  enableAnimations: boolean;
-  wrapLongLines: boolean;
+  compactMode?: boolean;
+  enableAnimations?: boolean;
+  wrapLongLines?: boolean;
+  telemetryEnabled?: boolean;
+  telemetryApiKey?: string;
 }
 
 interface SettingsDialogProps {
@@ -25,8 +29,22 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDialogProps) {
   const [localSettings, setLocalSettings] = useState<SettingsConfig>(settings);
+  const [showStyleEditor, setShowStyleEditor] = useState(false);
 
   const handleSave = () => {
+    // Update telemetry if changed
+    if (localSettings.telemetryEnabled !== undefined) {
+      telemetry.setEnabled(localSettings.telemetryEnabled);
+      if (localSettings.telemetryEnabled && localSettings.telemetryApiKey) {
+        const config = {
+          enabled: true,
+          apiKey: localSettings.telemetryApiKey,
+        };
+        localStorage.setItem('gistlens-telemetry', JSON.stringify(config));
+        telemetry.init(config);
+      }
+    }
+    
     onSave(localSettings);
     onClose();
   };
@@ -43,6 +61,8 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
       compactMode: false,
       enableAnimations: true,
       wrapLongLines: false,
+      telemetryEnabled: false,
+      telemetryApiKey: '',
     };
     setLocalSettings(defaultSettings);
   };
@@ -300,6 +320,80 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
               </div>
             </div>
           </section>
+
+          {/* Custom Styles Section */}
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-1 h-5 bg-primary rounded"></span>
+              Custom Styles
+            </h3>
+            
+            <div className="space-y-3 pl-3">
+              <div className="p-3 rounded-lg bg-muted/30 border">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Customize the appearance of GistLens and content renderers with custom CSS
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowStyleEditor(true)}
+                  className="w-full gap-2"
+                >
+                  <Palette className="w-4 h-4" />
+                  Open Style Editor
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          {/* Telemetry Section */}
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <span className="w-1 h-5 bg-primary rounded"></span>
+              Analytics & Telemetry
+            </h3>
+            
+            <div className="space-y-3 pl-3">
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                <div>
+                  <label className="font-medium text-sm">Enable Telemetry</label>
+                  <p className="text-xs text-muted-foreground">Help improve GistLens by sharing anonymous usage data</p>
+                </div>
+                <button
+                  onClick={() => setLocalSettings({ ...localSettings, telemetryEnabled: !localSettings.telemetryEnabled })}
+                  className={cn(
+                    "relative w-11 h-6 rounded-full transition-colors",
+                    localSettings.telemetryEnabled ? "bg-primary" : "bg-muted"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform",
+                      localSettings.telemetryEnabled ? "left-5" : "left-0.5"
+                    )}
+                  />
+                </button>
+              </div>
+
+              {localSettings.telemetryEnabled && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Activity className="w-4 h-4" />
+                    PostHog API Key (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={localSettings.telemetryApiKey || ''}
+                    onChange={(e) => setLocalSettings({ ...localSettings, telemetryApiKey: e.target.value })}
+                    placeholder="phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="w-full px-3 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to use default analytics. Provide your own PostHog API key for custom tracking.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
         {/* Footer */}
@@ -322,6 +416,14 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
           </div>
         </div>
       </div>
+
+      {/* Custom Style Editor */}
+      {showStyleEditor && (
+        <CustomStyleEditor
+          isOpen={showStyleEditor}
+          onClose={() => setShowStyleEditor(false)}
+        />
+      )}
     </div>
   );
 }
