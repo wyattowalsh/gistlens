@@ -79,7 +79,7 @@ export default function HomePage() {
 
       {/* Features */}
       <div className="bg-muted/50 rounded-2xl p-8 mb-16">
-        <h2 className="text-2xl font-bold mb-6">What's in GistLens v2.0</h2>
+        <h2 className="text-2xl font-bold mb-6">What&apos;s in GistLens v2.0</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div className="flex gap-3">
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">

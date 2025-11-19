@@ -41,8 +41,9 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 20+
+- pnpm 10+ (recommended package manager)
+- PostgreSQL 14+ (or cloud provider)
 
 ### Installation
 
@@ -51,17 +52,27 @@ Beautifully view your GitHub gists interactively with a modern, feature-rich web
 git clone https://github.com/wyattowalsh/gistlens.git
 cd gistlens
 
+# Install pnpm globally (if not already installed)
+npm install -g pnpm
+
 # Install dependencies
-npm install
+pnpm install
+
+# Setup environment variables
+cp .env.example .env.local
+# Edit .env.local with your credentials
+
+# Setup database (see docs for options)
+psql $POSTGRES_URL -f lib/db/schema.sql
 
 # Start development server
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
-# Preview production build
-npm run preview
+# Start production server
+pnpm start
 ```
 
 ## 🎯 Usage

@@ -3,12 +3,16 @@
   "version": "2.0.0",
   "description": "Beautifully view your gists interactively with rich media support - images, videos, audio, data files, and more",
   "private": true,
+  "packageManager": "pnpm@10.22.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "docs:dev": "pnpm --filter gistlens-docs dev",
+    "docs:build": "pnpm --filter gistlens-docs build",
+    "install:all": "pnpm install && cd docs && pnpm install"
   },
   "dependencies": {
     "@mdx-js/react": "^3.1.1",
