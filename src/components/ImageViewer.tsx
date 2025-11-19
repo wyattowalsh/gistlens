@@ -3,16 +3,22 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { ZoomIn, ZoomOut, Maximize2, RotateCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { GistFile } from '@/types';
+
+interface ImageViewerProps {
+  file: GistFile;
+  className?: string;
+}
 
 /**
  * ImageViewer Component
  * Displays images with pan, zoom, and rotation capabilities
  */
-export function ImageViewer({ file, className }) {
-  const [imageUrl, setImageUrl] = useState(null);
-  const [rotation, setRotation] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+export function ImageViewer({ file, className }: ImageViewerProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [rotation, setRotation] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Try to get the raw URL first
@@ -67,6 +73,7 @@ export function ImageViewer({ file, className }) {
   };
 
   const handleDownload = () => {
+    if (!imageUrl) return;
     const a = document.createElement('a');
     a.href = imageUrl;
     a.download = file.filename;
@@ -75,9 +82,9 @@ export function ImageViewer({ file, className }) {
     document.body.removeChild(a);
   };
 
-  const getMimeType = (filename) => {
-    const ext = filename.split('.').pop().toLowerCase();
-    const types = {
+  const getMimeType = (filename: string): string => {
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const types: Record<string, string> = {
       png: 'image/png',
       jpg: 'image/jpeg',
       jpeg: 'image/jpeg',

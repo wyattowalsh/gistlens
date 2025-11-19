@@ -2,19 +2,25 @@ import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { GistFile } from '@/types';
+
+interface VideoPlayerProps {
+  file: GistFile;
+  className?: string;
+}
 
 /**
  * VideoPlayer Component
  * HTML5 video player with custom controls
  */
-export function VideoPlayer({ file, className }) {
-  const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [error, setError] = useState(null);
+export function VideoPlayer({ file, className }: VideoPlayerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
+  const [volume, setVolume] = useState<number>(1);
+  const [error, setError] = useState<string | null>(null);
 
   const videoUrl = file.raw_url || file.content;
 
@@ -99,7 +105,7 @@ export function VideoPlayer({ file, className }) {
     document.body.removeChild(a);
   };
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number): string => {
     if (isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);

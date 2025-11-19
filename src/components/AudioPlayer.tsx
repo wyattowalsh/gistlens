@@ -2,19 +2,25 @@ import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Music, Download, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { GistFile } from '@/types';
+
+interface AudioPlayerProps {
+  file: GistFile;
+  className?: string;
+}
 
 /**
  * AudioPlayer Component
  * HTML5 audio player with custom controls and waveform visualization
  */
-export function AudioPlayer({ file, className }) {
-  const audioRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [error, setError] = useState(null);
+export function AudioPlayer({ file, className }: AudioPlayerProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
+  const [volume, setVolume] = useState<number>(1);
+  const [error, setError] = useState<string | null>(null);
 
   const audioUrl = file.raw_url || file.content;
 
@@ -100,7 +106,7 @@ export function AudioPlayer({ file, className }) {
     document.body.removeChild(a);
   };
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number): string => {
     if (isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);

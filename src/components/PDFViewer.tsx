@@ -2,13 +2,19 @@ import { useState } from 'react';
 import { FileText, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { GistFile } from '@/types';
+
+interface PDFViewerProps {
+  file: GistFile;
+  className?: string;
+}
 
 /**
  * PDFViewer Component
  * Displays PDF files using browser's native PDF viewer
  */
-export function PDFViewer({ file, className }) {
-  const [error, setError] = useState(null);
+export function PDFViewer({ file, className }: PDFViewerProps) {
+  const [error, setError] = useState<string | null>(null);
   const pdfUrl = file.raw_url || file.content;
 
   const handleDownload = () => {
