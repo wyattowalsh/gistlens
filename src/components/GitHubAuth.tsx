@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { Github, LogOut, User, Lock, Key, Check, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { githubAuth } from '@/lib/github-auth';
-import { cn } from '@/lib/utils';
 
 interface AuthState {
   isAuthenticated: boolean;

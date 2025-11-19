@@ -70,7 +70,7 @@ import { githubAuth } from '@/lib/github-auth';
 // --- Utility Functions ---
 
 // SEO and Metadata Management
-const updatePageMetadata = (data) => {
+const updatePageMetadata = (data: any) => {
   const { title, description, image, url, type = 'website' } = data;
   
   // Update title
@@ -79,7 +79,7 @@ const updatePageMetadata = (data) => {
   }
   
   // Helper to update or create meta tag
-  const updateMeta = (selector, content, property = 'content') => {
+  const updateMeta = (selector: string, content: string, property = 'content') => {
     if (!content) return;
     let meta = document.querySelector(selector);
     if (!meta) {
@@ -109,7 +109,7 @@ const updatePageMetadata = (data) => {
   updateMeta('meta[property="twitter:image"]', image);
   
   // Update canonical URL
-  let canonical = document.querySelector('link[rel="canonical"]');
+  let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
   if (url) {
     if (!canonical) {
       canonical = document.createElement('link');
@@ -121,7 +121,7 @@ const updatePageMetadata = (data) => {
   
   // Add JSON-LD structured data for gists
   if (data.structuredData) {
-    let scriptTag = document.querySelector('script[type="application/ld+json"]');
+    let scriptTag = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement | null;
     if (!scriptTag) {
       scriptTag = document.createElement('script');
       scriptTag.type = 'application/ld+json';
@@ -132,7 +132,7 @@ const updatePageMetadata = (data) => {
 };
 
 // Sharing utilities
-const shareContent = async (data) => {
+const shareContent = async (data: any) => {
   const { title, text, url } = data;
   
   // Try native Web Share API first
@@ -140,7 +140,7 @@ const shareContent = async (data) => {
     try {
       await navigator.share({ title, text, url });
       return { success: true, method: 'native' };
-    } catch (err) {
+    } catch (err: any) {
       if (err.name === 'AbortError') {
         return { success: false, method: 'native', cancelled: true };
       }
@@ -157,7 +157,7 @@ const shareContent = async (data) => {
 };
 
 // Generate share URLs for different platforms
-const getShareUrls = (url, title, text) => {
+const getShareUrls = (url: string, title: string, text: string) => {
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
   const encodedText = encodeURIComponent(text);
@@ -185,11 +185,11 @@ const FEATURED_USERS = [
 ];
 
 // Get a diverse set of gists using an intelligent algorithm
-const getSmartFeaturedGists = (allGists) => {
+const getSmartFeaturedGists = (allGists: any[]) => {
   if (!allGists || allGists.length === 0) return [];
   
   // Score each gist based on multiple factors
-  const scoredGists = allGists.map(gist => {
+  const scoredGists = allGists.map((gist: any) => {
     let score = 0;
     const fileCount = Object.keys(gist.files).length;
     const hasDescription = !!gist.description;
@@ -217,7 +217,7 @@ const getSmartFeaturedGists = (allGists) => {
     
     // Variety boost: check file types
     const fileTypes = new Set(
-      Object.values(gist.files).map(f => 
+      Object.values(gist.files).map((f: any) => 
         f.filename.split('.').pop()?.toLowerCase() || 'txt'
       )
     );
@@ -228,7 +228,7 @@ const getSmartFeaturedGists = (allGists) => {
   
   // Sort by score and return top results
   return scoredGists
-    .sort((a, b) => b.score - a.score)
+    .sort((a: any, b: any) => b.score - a.score)
     .slice(0, 6); // Get top 6 for diversity
 };
 
@@ -257,27 +257,27 @@ const DEFAULT_FEATURED_GISTS = [
   },
 ];
 
-const parseInput = (input) => {
+const parseInput = (input: string) => {
   if (!input) return null;
   
   // Try to parse as gist URL (with ID)
   const gistUrlMatch = input.match(/gist\.github\.com\/(?:[^/]+\/)?([a-f0-9]+)/i);
-  if (gistUrlMatch) return { type: 'gist', value: gistUrlMatch[1] };
+  if (gistUrlMatch) return { type: 'gist' as const, value: gistUrlMatch[1] };
   
   // Try to parse as user URL (https://gist.github.com/username)
   const userUrlMatch = input.match(/gist\.github\.com\/([^/]+)\/?$/i);
-  if (userUrlMatch) return { type: 'user', value: userUrlMatch[1] };
+  if (userUrlMatch) return { type: 'user' as const, value: userUrlMatch[1] };
   
   // Try to parse as just gist ID (hex string)
-  if (/^[a-f0-9]+$/i.test(input)) return { type: 'gist', value: input };
+  if (/^[a-f0-9]+$/i.test(input)) return { type: 'gist' as const, value: input };
   
   // Assume it's a username if it's alphanumeric with hyphens/underscores
-  if (/^[a-z0-9_-]+$/i.test(input)) return { type: 'user', value: input };
+  if (/^[a-z0-9_-]+$/i.test(input)) return { type: 'user' as const, value: input };
   
   return null;
 };
 
-const formatBytes = (bytes, decimals = 2) => {
+const formatBytes = (bytes: number, decimals = 2) => {
   if (!+bytes) return '0 Bytes';
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
@@ -320,7 +320,7 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-const ErrorDisplay = ({ message, onRetry }) => (
+const ErrorDisplay = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
   <div className="flex flex-col items-center justify-center p-8 text-center bg-destructive/10 rounded-xl border border-destructive/20 mx-4 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
     <div className="relative mb-4">
       <div className="absolute inset-0 bg-destructive/20 rounded-full blur-xl animate-pulse"></div>
@@ -338,14 +338,14 @@ const ErrorDisplay = ({ message, onRetry }) => (
 );
 
 // Share Button Component with dropdown menu
-const ShareButton = ({ url, title, description, compact = false }) => {
+const ShareButton = ({ url, title, description, compact = false }: { url: string; title: string; description?: string; compact?: boolean }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [copied, setCopied] = useState(false);
-  const menuRef = useRef(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowMenu(false);
       }
     };
@@ -512,9 +512,9 @@ export default function GistLens() {
   });
 
   // Handlers (defined early to avoid hoisting issues)
-  const addToHistory = useCallback((data) => {
+  const addToHistory = useCallback((data: any) => {
     setHistory(prev => {
-      const newEntry = {
+      const newEntry: HistoryItem = {
         id: data.id,
         description: data.description || 'No description',
         owner: data.owner?.login || 'Anonymous',
@@ -529,7 +529,7 @@ export default function GistLens() {
     });
   }, []);
 
-  const fetchGist = useCallback(async (id) => {
+  const fetchGist = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     setActiveFileIndex(0);
@@ -575,7 +575,7 @@ export default function GistLens() {
     }
   }, [addToHistory]);
 
-  const fetchUserGists = useCallback(async (username) => {
+  const fetchUserGists = useCallback(async (username: string) => {
     setLoading(true);
     setError(null);
     setUserGists([]);
@@ -626,7 +626,7 @@ export default function GistLens() {
     try {
       // Use timestamp-based randomization for variety on each visit
       const seed = Date.now();
-      const shuffleWithSeed = (array, seedValue) => {
+      const shuffleWithSeed = (array: any[], seedValue: number) => {
         const arr = [...array];
         let currentIndex = arr.length;
         let randomValue = seedValue;
@@ -664,9 +664,9 @@ export default function GistLens() {
       const smartSelection = getSmartFeaturedGists(shuffledGists);
       
       // Convert to display format
-      const featured = smartSelection.slice(0, 3).map((gist) => {
-        const firstFile = Object.values(gist.files)[0];
-        const ext = firstFile?.filename.split('.').pop()?.toLowerCase();
+      const featured = smartSelection.slice(0, 3).map((gist: any) => {
+        const firstFile: any = Object.values(gist.files)[0];
+        const ext = firstFile?.filename?.split('.').pop()?.toLowerCase();
         
         // Determine category and icon based on file type
         let category = 'Code';
@@ -900,7 +900,7 @@ export default function GistLens() {
     else setSidebarOpen(false);
   };
 
-  const handleUserGistClick = (gistId) => {
+  const handleUserGistClick = (gistId: string) => {
     setCurrentGistId(gistId);
     setView('gist');
     // Open sidebar on desktop when viewing a gist for history access
@@ -921,11 +921,11 @@ export default function GistLens() {
 
   // Keyboard shortcuts - placed after handleBackToHome is defined
   useEffect(() => {
-    const handleKeyPress = (e) => {
+    const handleKeyPress = (e: KeyboardEvent) => {
       // Cmd/Ctrl + K to focus search
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        document.querySelector('input[type="text"]')?.focus();
+        (document.querySelector('input[type="text"]') as HTMLInputElement)?.focus();
       }
       // Cmd/Ctrl + H to go home
       if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
@@ -957,7 +957,7 @@ export default function GistLens() {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
-  const removeHistoryItem = (e, id) => {
+  const removeHistoryItem = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     const newHistory = history.filter(h => h.id !== id);
     setHistory(newHistory);
@@ -1255,7 +1255,7 @@ export default function GistLens() {
             <div className="flex items-center justify-center h-full p-4">
               <ErrorDisplay 
                 message={error} 
-                onRetry={() => view === 'gist' ? fetchGist(currentGistId) : fetchUserGists(currentUsername)} 
+                onRetry={() => view === 'gist' && currentGistId ? fetchGist(currentGistId) : currentUsername ? fetchUserGists(currentUsername) : undefined} 
               />
             </div>
           ) : view === 'user' && userGists.length > 0 ? (
@@ -1476,9 +1476,9 @@ export default function GistLens() {
 
 // --- Sub-components ---
 
-const FileIcon = ({ filename }) => {
-  const ext = filename.split('.').pop().toLowerCase();
-  const colorMap = {
+const FileIcon = ({ filename }: { filename: string }) => {
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  const colorMap: Record<string, string> = {
     js: 'text-yellow-400',
     jsx: 'text-blue-400',
     ts: 'text-blue-500',
@@ -1496,7 +1496,7 @@ const FileIcon = ({ filename }) => {
   return <FileCode className={cn("w-4 h-4", colorMap[ext] || 'text-muted-foreground')} />;
 };
 
-const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPreviewMode, gistData }) => {
+const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPreviewMode, gistData }: any) => {
   const [copied, setCopied] = useState(false);
   const fileType = getFileType(file.filename, file.language);
   const isMarkdown = fileType === 'markdown';
@@ -1656,7 +1656,7 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
 };
 
 // FileContentRenderer - Routes to appropriate viewer based on file type
-const FileContentRenderer = ({ file, previewMode, darkMode }) => {
+const FileContentRenderer = ({ file, previewMode, darkMode }: any) => {
   const fileType = getFileType(file.filename, file.language);
 
   // Markdown preview
@@ -1693,7 +1693,7 @@ const FileContentRenderer = ({ file, previewMode, darkMode }) => {
   return <CodeBlock content={file.content} language={file.language} />;
 };
 
-const CodeBlock = ({ content, language }) => {
+const CodeBlock = ({ content, language }: { content: string; language?: string }) => {
   const langClass = language ? `language-${language.toLowerCase()}` : 'language-text';
   const codeRef = useRef(null);
   const [showLineNumbers, setShowLineNumbers] = useState(true);
@@ -1752,7 +1752,7 @@ const CodeBlock = ({ content, language }) => {
 };
 
 // --- HomePage Component ---
-const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
+const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }: any) => {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
       {/* Compact Hero Section */}
@@ -1785,7 +1785,7 @@ const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
           </div>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
-          {featuredGists.map((gist) => (
+          {featuredGists.map((gist: any) => (
             <FeaturedGistCard
               key={gist.id}
               gist={gist}
@@ -1870,7 +1870,7 @@ const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
   );
 };
 
-const FeaturedGistCard = ({ gist, onClick }) => {
+const FeaturedGistCard = ({ gist, onClick }: any) => {
   const Icon = gist.icon;
   return (
     <div
@@ -1905,7 +1905,7 @@ const FeaturedGistCard = ({ gist, onClick }) => {
   );
 };
 
-const QuickActionCard = ({ icon: Icon, title, description, shortcut }) => (
+const QuickActionCard = ({ icon: Icon, title, description, shortcut }: any) => (
   <div className="group relative p-3 sm:p-4 rounded-xl border bg-card hover:bg-muted/50 transition-all duration-200 hover:scale-[1.01] overflow-hidden">
     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
     <div className="relative space-y-2">
@@ -1925,7 +1925,7 @@ const QuickActionCard = ({ icon: Icon, title, description, shortcut }) => (
   </div>
 );
 
-const ShortcutBadge = ({ keys, description }) => (
+const ShortcutBadge = ({ keys, description }: any) => (
   <div className="flex flex-col gap-1 p-2 rounded-lg bg-card/50 border border-border/50">
     <kbd className="text-[10px] sm:text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-muted text-foreground text-center">
       {keys}
@@ -1936,7 +1936,7 @@ const ShortcutBadge = ({ keys, description }) => (
   </div>
 );
 
-const CompactFeatureCard = ({ icon: Icon, title, description }) => (
+const CompactFeatureCard = ({ icon: Icon, title, description }: any) => (
   <div className="group relative p-3 sm:p-4 rounded-xl border bg-card hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
     <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
     <div className="relative space-y-2">
@@ -1950,7 +1950,7 @@ const CompactFeatureCard = ({ icon: Icon, title, description }) => (
 );
 
 // --- UserGistsView Component ---
-const UserGistsView = ({ username, gists, onGistClick }) => {
+const UserGistsView = ({ username, gists, onGistClick }: any) => {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
       {/* User Header */}
@@ -1989,7 +1989,7 @@ const UserGistsView = ({ username, gists, onGistClick }) => {
 
       {/* Gists Grid */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {gists.map((gist) => (
+        {gists.map((gist: any) => (
           <UserGistCard key={gist.id} gist={gist} onClick={() => onGistClick(gist.id)} />
         ))}
       </div>
@@ -1997,10 +1997,10 @@ const UserGistsView = ({ username, gists, onGistClick }) => {
   );
 };
 
-const UserGistCard = ({ gist, onClick }) => {
-  const files = Object.values(gist.files);
+const UserGistCard = ({ gist, onClick }: any) => {
+  const files: any[] = Object.values(gist.files);
   const fileCount = files.length;
-  const firstFile = files[0];
+  const firstFile: any = files[0];
 
   return (
     <div

@@ -3,9 +3,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Palette, Save, RotateCcw, Download, Upload, Eye, EyeOff, Code, Check, AlertCircle } from 'lucide-react';
+import { Palette, Save, RotateCcw, Download, Upload, Eye, Code, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { customStyles, type StyleTarget } from '@/lib/custom-styles';
 import { cn } from '@/lib/utils';
 

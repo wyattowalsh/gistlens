@@ -192,7 +192,7 @@ class GitHubAuthService {
    * Exchange authorization code for access token
    * Note: This is a placeholder - requires backend proxy
    */
-  private async exchangeCodeForToken(code: string): Promise<{ access_token: string }> {
+  private async exchangeCodeForToken(_code: string): Promise<{ access_token: string }> {
     // In production, this would call a backend endpoint that exchanges the code
     // Backend would use the client secret to get the token
     // For now, we'll return a placeholder

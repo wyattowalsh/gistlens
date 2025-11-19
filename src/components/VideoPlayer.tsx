@@ -66,7 +66,7 @@ export function VideoPlayer({ file, className }: VideoPlayerProps) {
     setIsMuted(!isMuted);
   };
 
-  const handleVolumeChange = (e) => {
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const video = videoRef.current;
     if (!video) return;
 
@@ -76,7 +76,7 @@ export function VideoPlayer({ file, className }: VideoPlayerProps) {
     setIsMuted(newVolume === 0);
   };
 
-  const handleSeek = (e) => {
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const video = videoRef.current;
     if (!video) return;
 

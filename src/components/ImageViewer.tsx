@@ -182,7 +182,7 @@ export function ImageViewer({ file, className }: ImageViewerProps) {
               contentClass="flex items-center justify-center"
             >
               <img
-                src={imageUrl}
+                src={imageUrl || ''}
                 alt={file.filename}
                 style={{
                   transform: `rotate(${rotation}deg)`,

@@ -66,7 +66,7 @@ export function AudioPlayer({ file, className }: AudioPlayerProps) {
     setIsMuted(!isMuted);
   };
 
-  const handleVolumeChange = (e) => {
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -76,7 +76,7 @@ export function AudioPlayer({ file, className }: AudioPlayerProps) {
     setIsMuted(newVolume === 0);
   };
 
-  const handleSeek = (e) => {
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current;
     if (!audio) return;
 
