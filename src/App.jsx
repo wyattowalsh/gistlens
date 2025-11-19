@@ -24,11 +24,15 @@ import {
   Zap,
   Home,
   User,
-  TrendingUp,
   ChevronRight,
-  Rocket,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  Share2,
+  Link2,
+  Twitter,
+  Facebook,
+  Linkedin,
+  Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -54,6 +58,107 @@ import { cn } from '@/lib/utils';
  */
 
 // --- Utility Functions ---
+
+// SEO and Metadata Management
+const updatePageMetadata = (data) => {
+  const { title, description, image, url, type = 'website' } = data;
+  
+  // Update title
+  if (title) {
+    document.title = title;
+  }
+  
+  // Helper to update or create meta tag
+  const updateMeta = (selector, content, property = 'content') => {
+    if (!content) return;
+    let meta = document.querySelector(selector);
+    if (!meta) {
+      meta = document.createElement('meta');
+      const attr = selector.includes('property=') ? 'property' : 'name';
+      const value = selector.match(/"([^"]+)"/)?.[1];
+      if (value) meta.setAttribute(attr, value);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute(property, content);
+  };
+  
+  // Update basic meta tags
+  updateMeta('meta[name="description"]', description);
+  updateMeta('meta[name="title"]', title);
+  
+  // Update Open Graph tags
+  updateMeta('meta[property="og:title"]', title);
+  updateMeta('meta[property="og:description"]', description);
+  updateMeta('meta[property="og:image"]', image);
+  updateMeta('meta[property="og:url"]', url);
+  updateMeta('meta[property="og:type"]', type);
+  
+  // Update Twitter Card tags
+  updateMeta('meta[property="twitter:title"]', title);
+  updateMeta('meta[property="twitter:description"]', description);
+  updateMeta('meta[property="twitter:image"]', image);
+  
+  // Update canonical URL
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (url) {
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = url;
+  }
+  
+  // Add JSON-LD structured data for gists
+  if (data.structuredData) {
+    let scriptTag = document.querySelector('script[type="application/ld+json"]');
+    if (!scriptTag) {
+      scriptTag = document.createElement('script');
+      scriptTag.type = 'application/ld+json';
+      document.head.appendChild(scriptTag);
+    }
+    scriptTag.textContent = JSON.stringify(data.structuredData);
+  }
+};
+
+// Sharing utilities
+const shareContent = async (data) => {
+  const { title, text, url } = data;
+  
+  // Try native Web Share API first
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text, url });
+      return { success: true, method: 'native' };
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return { success: false, method: 'native', cancelled: true };
+      }
+    }
+  }
+  
+  // Fallback: copy to clipboard
+  try {
+    await navigator.clipboard.writeText(url);
+    return { success: true, method: 'clipboard' };
+  } catch (err) {
+    return { success: false, method: 'clipboard', error: err };
+  }
+};
+
+// Generate share URLs for different platforms
+const getShareUrls = (url, title, text) => {
+  const encodedUrl = encodeURIComponent(url);
+  const encodedTitle = encodeURIComponent(title);
+  const encodedText = encodeURIComponent(text);
+  
+  return {
+    twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+    email: `mailto:?subject=${encodedTitle}&body=${encodedText}%0A%0A${encodedUrl}`,
+  };
+};
 
 // Curated list of high-quality GitHub users known for excellent gists
 const FEATURED_USERS = [
@@ -179,39 +284,175 @@ const isMarkdownFile = (filename, language) => {
 // --- Components ---
 
 const LoadingSkeleton = () => (
-  <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-pulse">
+  <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+    {/* Animated Loading Indicator */}
+    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground animate-pulse">Loading gist...</p>
+    </div>
     {/* Header Skeleton */}
-    <div className="p-6 md:p-8 rounded-2xl border bg-card">
+    <div className="p-6 md:p-8 rounded-2xl border bg-card animate-pulse">
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-xl bg-muted"></div>
+        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-muted to-muted/50"></div>
         <div className="flex-1 space-y-3">
-          <div className="h-8 bg-muted rounded w-3/4"></div>
-          <div className="h-4 bg-muted rounded w-1/2"></div>
+          <div className="h-8 bg-gradient-to-r from-muted to-muted/50 rounded w-3/4"></div>
+          <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-1/2"></div>
         </div>
       </div>
     </div>
     {/* Content Skeleton */}
-    <div className="rounded-2xl border bg-card p-6 space-y-4">
-      <div className="h-4 bg-muted rounded w-full"></div>
-      <div className="h-4 bg-muted rounded w-5/6"></div>
-      <div className="h-4 bg-muted rounded w-4/6"></div>
+    <div className="rounded-2xl border bg-card p-6 space-y-4 animate-pulse">
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-full"></div>
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-5/6"></div>
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-4/6"></div>
+      <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded w-3/4"></div>
     </div>
   </div>
 );
 
 const ErrorDisplay = ({ message, onRetry }) => (
-  <div className="flex flex-col items-center justify-center p-8 text-center bg-destructive/10 rounded-xl border border-destructive/20 mx-4 backdrop-blur-sm">
-    <div className="bg-destructive/10 p-4 rounded-full mb-4">
-      <AlertCircle className="w-8 h-8 text-destructive" />
+  <div className="flex flex-col items-center justify-center p-8 text-center bg-destructive/10 rounded-xl border border-destructive/20 mx-4 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div className="relative mb-4">
+      <div className="absolute inset-0 bg-destructive/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="relative bg-destructive/10 p-4 rounded-full">
+        <AlertCircle className="w-8 h-8 text-destructive animate-pulse" />
+      </div>
     </div>
     <h3 className="text-xl font-bold mb-2">Failed to Load Gist</h3>
     <p className="text-muted-foreground mb-6 max-w-md">{message}</p>
-    <Button onClick={onRetry} variant="destructive" className="shadow-lg">
-      <Zap className="w-4 h-4 mr-2" />
+    <Button onClick={onRetry} variant="destructive" className="shadow-lg hover:scale-105 transition-transform group">
+      <Zap className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
       Try Again
     </Button>
   </div>
 );
+
+// Share Button Component with dropdown menu
+const ShareButton = ({ url, title, description, compact = false }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleShare = async () => {
+    const result = await shareContent({ title, text: description, url });
+    if (result.success && result.method === 'native') {
+      setShowMenu(false);
+    } else if (result.success && result.method === 'clipboard') {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      setShowMenu(true);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const shareUrls = getShareUrls(url, title, description || title);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size={compact ? "icon" : "default"}
+            onClick={handleShare}
+            className={cn(
+              "shadow-sm hover:shadow-md transition-all",
+              "hover:scale-105 active:scale-95",
+              compact ? "h-9 w-9" : ""
+            )}
+          >
+            {copied ? (
+              <Check className={cn("text-green-500", compact ? "w-4 h-4" : "w-4 h-4 mr-2")} />
+            ) : (
+              <Share2 className={cn(compact ? "w-4 h-4" : "w-4 h-4 mr-2")} />
+            )}
+            {!compact && <span>{copied ? 'Copied!' : 'Share'}</span>}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Share this content</p>
+        </TooltipContent>
+      </Tooltip>
+
+      {showMenu && (
+        <div className="absolute right-0 mt-2 w-48 rounded-xl border bg-card shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <div className="p-2 space-y-1">
+            <button
+              onClick={handleCopyLink}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+            >
+              <Link2 className="w-4 h-4" />
+              <span>Copy Link</span>
+            </button>
+            <a
+              href={shareUrls.twitter}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+              onClick={() => setShowMenu(false)}
+            >
+              <Twitter className="w-4 h-4" />
+              <span>Twitter</span>
+            </a>
+            <a
+              href={shareUrls.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+              onClick={() => setShowMenu(false)}
+            >
+              <Facebook className="w-4 h-4" />
+              <span>Facebook</span>
+            </a>
+            <a
+              href={shareUrls.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+              onClick={() => setShowMenu(false)}
+            >
+              <Linkedin className="w-4 h-4" />
+              <span>LinkedIn</span>
+            </a>
+            <a
+              href={shareUrls.email}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+              onClick={() => setShowMenu(false)}
+            >
+              <Mail className="w-4 h-4" />
+              <span>Email</span>
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // --- Main Application ---
 
@@ -433,6 +674,57 @@ export default function GistLens() {
     }
   }, [gistData, loading, activeFileIndex, previewMode]);
 
+  // Dynamic metadata updates based on current view
+  useEffect(() => {
+    const baseUrl = window.location.origin;
+    const currentUrl = window.location.href;
+    
+    if (view === 'home') {
+      updatePageMetadata({
+        title: 'GistLens - Beautiful GitHub Gist Viewer',
+        description: 'View GitHub gists beautifully with syntax highlighting, markdown preview, user gist browsing, and more. Modern UI with dark mode support.',
+        image: `${baseUrl}/icon.png`,
+        url: baseUrl,
+        type: 'website'
+      });
+    } else if (view === 'gist' && gistData) {
+      const firstFile = Object.values(gistData.files)[0];
+      const fileName = firstFile?.filename || 'Gist';
+      const description = gistData.description || `View ${fileName} on GistLens`;
+      const owner = gistData.owner?.login || 'Anonymous';
+      
+      updatePageMetadata({
+        title: `${fileName} by ${owner} - GistLens`,
+        description: description,
+        image: gistData.owner?.avatar_url || `${baseUrl}/icon.png`,
+        url: currentUrl,
+        type: 'article',
+        structuredData: {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareSourceCode',
+          'name': fileName,
+          'description': description,
+          'author': {
+            '@type': 'Person',
+            'name': owner,
+            'url': `https://github.com/${owner}`
+          },
+          'dateModified': gistData.updated_at,
+          'codeRepository': gistData.html_url,
+          'programmingLanguage': firstFile?.language || 'Code'
+        }
+      });
+    } else if (view === 'user' && currentUsername) {
+      updatePageMetadata({
+        title: `${currentUsername}'s Gists - GistLens`,
+        description: `Browse all public gists by ${currentUsername} on GistLens with beautiful syntax highlighting and markdown preview.`,
+        image: userGists[0]?.owner?.avatar_url || `${baseUrl}/icon.png`,
+        url: currentUrl,
+        type: 'profile'
+      });
+    }
+  }, [view, gistData, currentUsername, userGists]);
+
   // Handle URL hash for markdown section navigation
   useEffect(() => {
     const handleHashChange = () => {
@@ -598,14 +890,18 @@ export default function GistLens() {
           )}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={handleBackToHome}>
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group/logo" onClick={handleBackToHome}>
                 <div className="relative shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-75"></div>
-                  <div className="relative p-2 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl">
-                    <Code2 className="w-5 h-5 text-white" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl blur-md opacity-50 group-hover/logo:opacity-75 transition-opacity"></div>
+                  <div className="relative p-1.5 sm:p-2 bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 rounded-xl group-hover/logo:scale-105 transition-transform">
+                    <img 
+                      src="/icon.svg" 
+                      alt="GistLens Logo" 
+                      className="w-5 h-5 sm:w-6 sm:h-6"
+                    />
                   </div>
                 </div>
-                <span className="hidden sm:inline text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                <span className="hidden sm:inline text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent group-hover/logo:scale-105 transition-transform">
                   GistLens
                 </span>
               </div>
@@ -850,19 +1146,24 @@ export default function GistLens() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    <ShareButton
+                      url={window.location.href}
+                      title={`${Object.keys(gistData.files)[0]} by ${gistData.owner?.login || 'Anonymous'}`}
+                      description={gistData.description || `Check out this gist on GistLens!`}
+                    />
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button 
                           variant="outline"
                           asChild
-                          className="shadow-sm hover:shadow-md transition-shadow text-xs sm:text-sm"
+                          className="shadow-sm hover:shadow-md transition-all hover:scale-105 text-xs sm:text-sm group"
                         >
                           <a 
                             href={gistData.html_url}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 group-hover:rotate-12 transition-transform" />
                             <span className="hidden sm:inline">Open in GitHub</span>
                             <span className="sm:hidden">GitHub</span>
                           </a>
@@ -872,10 +1173,39 @@ export default function GistLens() {
                         <p>Open in GitHub</p>
                       </TooltipContent>
                     </Tooltip>
-                    <div className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-mono rounded-lg border bg-muted/50 flex items-center gap-1.5 sm:gap-2">
-                      <FileCode className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                      {Object.keys(gistData.files).length} File(s)
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-mono rounded-lg border bg-primary/5 border-primary/20 flex items-center gap-1.5 sm:gap-2 hover:bg-primary/10 transition-colors cursor-help">
+                          <FileCode className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                          {Object.keys(gistData.files).length} File{Object.keys(gistData.files).length !== 1 ? 's' : ''}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Number of files in this gist</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    {gistData.public !== undefined && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-mono rounded-lg border bg-muted/50 flex items-center gap-1.5 cursor-help">
+                            {gistData.public ? (
+                              <>
+                                <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                                <span className="hidden sm:inline">Public</span>
+                              </>
+                            ) : (
+                              <>
+                                <X className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                                <span className="hidden sm:inline">Private</span>
+                              </>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This gist is {gistData.public ? 'publicly' : 'privately'} visible</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                 </div>
               </div>
@@ -919,6 +1249,7 @@ export default function GistLens() {
                       toggleFullscreen={() => setIsFullscreen(!isFullscreen)}
                       previewMode={previewMode}
                       setPreviewMode={setPreviewMode}
+                      gistData={gistData}
                     />
                   )}
 
@@ -950,6 +1281,29 @@ export default function GistLens() {
             </div>
           ) : null}
         </main>
+
+        {/* Back to Top Button */}
+        {(view === 'gist' || view === 'user') && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="default"
+                size="icon"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className={cn(
+                  "fixed bottom-6 right-6 z-40 rounded-full shadow-2xl",
+                  "hover:scale-110 transition-all duration-300",
+                  "bg-gradient-to-tr from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
+                )}
+              >
+                <ChevronRight className="w-5 h-5 rotate-[-90deg]" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Back to top</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </div>
     </TooltipProvider>
@@ -978,7 +1332,7 @@ const FileIcon = ({ filename }) => {
   return <FileCode className={cn("w-4 h-4", colorMap[ext] || 'text-muted-foreground')} />;
 };
 
-const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPreviewMode }) => {
+const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPreviewMode, gistData }) => {
   const [copied, setCopied] = useState(false);
   const isMarkdown = isMarkdownFile(file.filename, file.language);
 
@@ -1021,6 +1375,14 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
       </div>
 
       <div className="flex items-center gap-1">
+        <div className="mr-1">
+          <ShareButton
+            url={file.raw_url || window.location.href}
+            title={file.filename}
+            description={`View ${file.filename} from ${gistData?.owner?.login || 'a gist'} on GistLens`}
+            compact={true}
+          />
+        </div>
         {isMarkdown && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -1118,6 +1480,8 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
 const CodeBlock = ({ content, language }) => {
   const langClass = language ? `language-${language.toLowerCase()}` : 'language-text';
   const codeRef = useRef(null);
+  const [showLineNumbers, setShowLineNumbers] = useState(true);
+  const lines = content.split('\n');
 
   useEffect(() => {
     if (codeRef.current && window.Prism) {
@@ -1126,21 +1490,47 @@ const CodeBlock = ({ content, language }) => {
   }, [content, language]);
 
   return (
-    <div className="text-xs sm:text-sm font-mono leading-relaxed p-4 sm:p-6 bg-muted/20 overflow-x-auto">
-      <pre 
-        className={cn(
-          langClass,
-          "!m-0 !p-0 !bg-transparent !shadow-none !border-0"
+    <div className="relative group">
+      {/* Line Numbers Toggle */}
+      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowLineNumbers(!showLineNumbers)}
+          className="h-7 text-xs bg-muted/90 backdrop-blur-sm"
+        >
+          <Terminal className="w-3 h-3 mr-1.5" />
+          {showLineNumbers ? 'Hide' : 'Show'} Lines
+        </Button>
+      </div>
+      
+      <div className="flex text-xs sm:text-sm font-mono leading-relaxed bg-muted/20 overflow-x-auto">
+        {showLineNumbers && (
+          <div className="select-none py-4 pl-4 pr-3 bg-muted/30 border-r border-border/50 text-muted-foreground/50">
+            {lines.map((_, idx) => (
+              <div key={idx} className="text-right leading-relaxed">
+                {idx + 1}
+              </div>
+            ))}
+          </div>
         )}
-        style={{ 
-          fontFamily: '"Fira Code", "JetBrains Mono", Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
-          tabSize: 4 
-        }}
-      >
-        <code ref={codeRef} className={langClass}>
-          {content}
-        </code>
-      </pre>
+        <div className="flex-1 p-4 sm:p-6">
+          <pre 
+            className={cn(
+              langClass,
+              "!m-0 !p-0 !bg-transparent !shadow-none !border-0"
+            )}
+            style={{ 
+              fontFamily: '"Fira Code", "JetBrains Mono", Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+              tabSize: 4 
+            }}
+          >
+            <code ref={codeRef} className={langClass}>
+              {content}
+            </code>
+          </pre>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1148,73 +1538,37 @@ const CodeBlock = ({ content, language }) => {
 // --- HomePage Component ---
 const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 sm:space-y-10 md:space-y-12">
-      {/* Hero Section */}
-      <div className="text-center space-y-4 sm:space-y-6 py-8 sm:py-12 md:py-20">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+      {/* Compact Hero Section */}
+      <div className="text-center space-y-3 sm:space-y-4 py-6 sm:py-8 md:py-12">
         <div className="relative inline-block px-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-3xl opacity-30 animate-pulse"></div>
-          <h1 className="relative text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-3xl opacity-20 animate-pulse"></div>
+          <h1 className="relative text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
             GistLens
           </h1>
         </div>
-        <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
-          Beautiful GitHub Gist Viewer with Enhanced Features
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto px-4">
+          View and share GitHub gists with syntax highlighting and markdown preview
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 pt-4 sm:pt-6 px-4">
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
-            <Rocket className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="text-xs sm:text-sm font-medium">Modern UI</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="text-xs sm:text-sm font-medium">Syntax Highlighting</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
-            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="text-xs sm:text-sm font-medium">Markdown Preview</span>
-          </div>
-        </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-        <FeatureCard
-          icon={FileCode}
-          title="View Any Gist"
-          description="Paste a gist URL or ID to view beautifully rendered code with syntax highlighting"
-          gradient="from-blue-500 to-cyan-500"
-        />
-        <FeatureCard
-          icon={User}
-          title="Browse User Gists"
-          description="Enter a username to explore all public gists from any GitHub user"
-          gradient="from-purple-500 to-pink-500"
-        />
-        <FeatureCard
-          icon={TrendingUp}
-          title="Featured Gists"
-          description="Discover awesome gists curated for learning and inspiration"
-          gradient="from-orange-500 to-red-500"
-        />
-      </div>
-
-      {/* Featured Gists Section */}
-      <div className="space-y-4 sm:space-y-6">
+      {/* Featured Gists Section - Now Primary */}
+      <div className="space-y-4 sm:space-y-5">
         <div className="flex items-center justify-between px-2">
-          <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3">
-            <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-yellow-500" />
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+            <Star className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-yellow-500 fill-yellow-500 animate-pulse" />
             Featured Gists
           </h2>
           <div className="flex items-center gap-2">
             {loadingFeatured && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Sparkles className="w-4 h-4 animate-pulse" />
-                <span className="hidden sm:inline">Refreshing...</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
+                <span className="hidden sm:inline">Loading...</span>
               </div>
             )}
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
           {featuredGists.map((gist) => (
             <FeaturedGistCard
               key={gist.id}
@@ -1225,66 +1579,96 @@ const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
         </div>
       </div>
 
-      {/* How to Use Section */}
-      <div className="bg-gradient-to-br from-card via-card to-muted/20 rounded-2xl border p-4 sm:p-6 md:p-8 lg:p-12 space-y-4 sm:space-y-6">
-        <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3">
-          <Lightbulb className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />
-          How to Use
+      {/* Quick Usage Guide */}
+      <div className="bg-gradient-to-br from-card via-card to-muted/20 rounded-2xl border p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
+          <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          Quick Start
         </h2>
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
-          <HowToCard
-            number="1"
-            title="View a Specific Gist"
-            description="Paste a gist URL (e.g., https://gist.github.com/user/abc123) or just the ID"
+        <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+          <QuickActionCard
+            icon={FileCode}
+            title="View Gist"
+            description="Paste gist URL or ID in the search bar above"
+            shortcut="Ctrl+K"
           />
-          <HowToCard
-            number="2"
-            title="Browse User Gists"
-            description="Enter a username (e.g., 'wyattowalsh') or user URL to see all their public gists"
+          <QuickActionCard
+            icon={User}
+            title="Browse User"
+            description="Enter a GitHub username to explore their gists"
+            shortcut="@username"
           />
-          <HowToCard
-            number="3"
-            title="Explore Features"
-            description="Use tabs for multi-file gists, toggle preview for markdown, and download files"
+          <QuickActionCard
+            icon={Download}
+            title="Download Files"
+            description="Download individual files or entire gists"
+            shortcut="Click ↓"
           />
-          <HowToCard
-            number="4"
-            title="Customize Experience"
-            description="Switch between dark/light mode and access your viewing history in the sidebar"
+          <QuickActionCard
+            icon={Share2}
+            title="Share"
+            description="Share gists, files, or code snippets easily"
+            shortcut="Click 🔗"
           />
         </div>
+      </div>
+
+      {/* Keyboard Shortcuts */}
+      <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border p-4 sm:p-5 space-y-3">
+        <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+          <Terminal className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          Keyboard Shortcuts
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <ShortcutBadge keys="Ctrl+K" description="Focus search" />
+          <ShortcutBadge keys="Ctrl+H" description="Go home" />
+          <ShortcutBadge keys="Ctrl+D" description="Toggle theme" />
+          <ShortcutBadge keys="Esc" description="Close sidebar" />
+        </div>
+      </div>
+
+      {/* Advanced Features */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <CompactFeatureCard
+          icon={Eye}
+          title="Preview"
+          description="Live markdown rendering"
+        />
+        <CompactFeatureCard
+          icon={Code2}
+          title="Syntax"
+          description="15+ languages supported"
+        />
+        <CompactFeatureCard
+          icon={Clock}
+          title="History"
+          description="Recently viewed gists"
+        />
+        <CompactFeatureCard
+          icon={Moon}
+          title="Dark Mode"
+          description="Eye-friendly themes"
+        />
       </div>
     </div>
   );
 };
-
-const FeatureCard = ({ icon: Icon, title, description, gradient }) => (
-  <div className="group relative p-4 sm:p-6 rounded-2xl border bg-card hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-    <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity", gradient)}></div>
-    <div className="relative space-y-2 sm:space-y-3">
-      <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br flex items-center justify-center", gradient)}>
-        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-      </div>
-      <h3 className="text-lg sm:text-xl font-bold">{title}</h3>
-      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>
-    </div>
-  </div>
-);
 
 const FeaturedGistCard = ({ gist, onClick }) => {
   const Icon = gist.icon;
   return (
     <div
       onClick={onClick}
-      className="group relative p-4 sm:p-6 rounded-2xl border bg-card cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
+      className="group relative p-4 sm:p-6 rounded-2xl border bg-card cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       <div className="relative space-y-3 sm:space-y-4">
         <div className="flex items-start justify-between">
-          <div className="p-2 sm:p-3 rounded-xl bg-primary/10">
-            <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          <div className="p-2 sm:p-3 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors group-hover:scale-110 transition-transform duration-300">
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary group-hover:rotate-12 transition-transform duration-300" />
           </div>
-          <div className="px-2 sm:px-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary">
+          <div className="px-2 sm:px-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary group-hover:bg-primary/20 transition-colors">
             {gist.category}
           </div>
         </div>
@@ -1298,21 +1682,53 @@ const FeaturedGistCard = ({ gist, onClick }) => {
         </div>
         <div className="flex items-center gap-2 text-xs sm:text-sm text-primary font-medium">
           <span>View Gist</span>
-          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
+          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-2 transition-transform duration-300" />
         </div>
       </div>
     </div>
   );
 };
 
-const HowToCard = ({ number, title, description }) => (
-  <div className="flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-    <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-base sm:text-lg">
-      {number}
+const QuickActionCard = ({ icon: Icon, title, description, shortcut }) => (
+  <div className="group relative p-3 sm:p-4 rounded-xl border bg-card hover:bg-muted/50 transition-all duration-200 hover:scale-[1.01] overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+    <div className="relative space-y-2">
+      <div className="flex items-center justify-between">
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary group-hover:scale-110 transition-transform" />
+        {shortcut && (
+          <span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+            {shortcut}
+          </span>
+        )}
+      </div>
+      <div>
+        <h4 className="text-xs sm:text-sm font-bold mb-0.5">{title}</h4>
+        <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">{description}</p>
+      </div>
     </div>
-    <div className="space-y-1">
-      <h4 className="text-sm sm:text-base font-bold">{title}</h4>
-      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{description}</p>
+  </div>
+);
+
+const ShortcutBadge = ({ keys, description }) => (
+  <div className="flex flex-col gap-1 p-2 rounded-lg bg-card/50 border border-border/50">
+    <kbd className="text-[10px] sm:text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-muted text-foreground text-center">
+      {keys}
+    </kbd>
+    <span className="text-[9px] sm:text-[10px] text-muted-foreground text-center leading-tight">
+      {description}
+    </span>
+  </div>
+);
+
+const CompactFeatureCard = ({ icon: Icon, title, description }) => (
+  <div className="group relative p-3 sm:p-4 rounded-xl border bg-card hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+    <div className="relative space-y-2">
+      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-300" />
+      <div>
+        <h4 className="text-xs sm:text-sm font-bold mb-0.5 group-hover:text-primary transition-colors">{title}</h4>
+        <p className="text-[10px] sm:text-xs text-muted-foreground">{description}</p>
+      </div>
     </div>
   </div>
 );
@@ -1323,25 +1739,34 @@ const UserGistsView = ({ username, gists, onGistClick }) => {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
       {/* User Header */}
       <div className="p-4 sm:p-6 md:p-8 rounded-2xl border shadow-lg bg-gradient-to-br from-card via-card to-muted/20">
-        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-          {gists[0]?.owner?.avatar_url && (
-            <div className="relative shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-xl blur-md opacity-50"></div>
-              <img
-                src={gists[0].owner.avatar_url}
-                alt={username}
-                className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl shadow-lg ring-2 ring-background"
-              />
+        <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            {gists[0]?.owner?.avatar_url && (
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-xl blur-md opacity-50"></div>
+                <img
+                  src={gists[0].owner.avatar_url}
+                  alt={username}
+                  className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl shadow-lg ring-2 ring-background"
+                />
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-1 flex items-center gap-2">
+                <User className="w-6 h-6 sm:w-7 sm:h-7 text-primary shrink-0" />
+                <span className="truncate">{username}</span>
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                {gists.length} Public Gist{gists.length !== 1 ? 's' : ''}
+              </p>
             </div>
-          )}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1 flex items-center gap-2">
-              <User className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
-              <span className="truncate">{username}</span>
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              {gists.length} Public Gist{gists.length !== 1 ? 's' : ''}
-            </p>
+          </div>
+          <div className="shrink-0">
+            <ShareButton
+              url={window.location.href}
+              title={`${username}'s Gists`}
+              description={`Browse ${gists.length} public gists by ${username} on GistLens`}
+            />
           </div>
         </div>
       </div>
@@ -1364,17 +1789,18 @@ const UserGistCard = ({ gist, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="group p-4 sm:p-5 rounded-xl border bg-card cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+      className="group relative p-4 sm:p-5 rounded-xl border bg-card cursor-pointer hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 overflow-hidden"
     >
-      <div className="space-y-2 sm:space-y-3">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div className="relative space-y-2 sm:space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <FileCode className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
+            <FileCode className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 group-hover:scale-110 transition-transform duration-300" />
             <h3 className="font-semibold text-xs sm:text-sm truncate group-hover:text-primary transition-colors">
               {firstFile?.filename || 'Untitled'}
             </h3>
           </div>
-          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
+          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-2 transition-all duration-300 shrink-0" />
         </div>
         
         {gist.description && (
