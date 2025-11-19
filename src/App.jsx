@@ -31,10 +31,10 @@ import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { cn } from '@/lib/utils';
 
 /**
- * GistLens v2.0 - A Modern GitHub Gist Renderer
+ * GistLens - A Modern GitHub Gist Renderer
  * 
  * Enhanced Features:
- * - Tailwind v4 with shadcn/ui components
+ * - Tailwind CSS with shadcn/ui components
  * - Enhanced MDX markdown rendering with math support
  * - Beautiful, modern UI with gradient effects
  * - PrismJS Syntax Highlighting
@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
  * - Local Storage History
  * - Multi-file support with enhanced tabs
  * - File downloading and raw view
+ * - URL hash navigation for markdown sections
  */
 
 // --- Utility Functions ---
@@ -173,6 +174,29 @@ export default function GistLens() {
     }
   }, [gistData, loading, activeFileIndex, previewMode]);
 
+  // Handle URL hash for markdown section navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash && previewMode) {
+        // Short delay to ensure markdown is rendered
+        setTimeout(() => {
+          const element = document.querySelector(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+    };
+
+    // Handle initial hash on load
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [previewMode, gistData, activeFileIndex]);
+
   // Handlers
   const fetchGist = async (id) => {
     setLoading(true);
@@ -271,9 +295,6 @@ export default function GistLens() {
             </div>
             <span className="hidden sm:inline text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
               GistLens
-            </span>
-            <span className="hidden sm:inline px-2 py-0.5 text-[10px] font-semibold bg-primary/10 text-primary rounded-full border border-primary/20">
-              v2.0
             </span>
           </div>
         </div>

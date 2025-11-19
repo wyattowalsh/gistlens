@@ -111,9 +111,17 @@ export function MarkdownRenderer({ content, darkMode, className }) {
         .markdown-renderer .anchor-link {
           text-decoration: none;
           color: inherit;
+          position: relative;
         }
         .markdown-renderer .anchor-link:hover {
           opacity: 0.8;
+        }
+        .markdown-renderer .anchor-link:target {
+          animation: highlight-section 2s ease-in-out;
+        }
+        @keyframes highlight-section {
+          0%, 100% { background-color: transparent; }
+          50% { background-color: rgba(59, 130, 246, 0.1); }
         }
         .markdown-renderer .task-list-item {
           list-style: none;
