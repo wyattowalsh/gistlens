@@ -46,8 +46,11 @@ import { AudioPlayer } from '@/components/AudioPlayer';
 import { DataViewer } from '@/components/DataViewer';
 import { PDFViewer } from '@/components/PDFViewer';
 import { SettingsDialog, type SettingsConfig } from '@/components/SettingsDialog';
+import { GitHubAuthButton } from '@/components/GitHubAuth';
 import { getFileType } from '@/lib/fileTypes';
 import { cn } from '@/lib/utils';
+import { telemetry } from '@/lib/telemetry';
+import { githubAuth } from '@/lib/github-auth';
 
 /**
  * GistLens - A Modern GitHub Gist Renderer
@@ -353,8 +356,12 @@ const ShareButton = ({ url, title, description, compact = false }) => {
   const handleShare = async () => {
     const result = await shareContent({ title, text: description, url });
     if (result.success && result.method === 'native') {
+      // Track share via native share API
+      telemetry.trackGistShare(url.match(/gist\.github\.com\/[^/]+\/([a-f0-9]+)/i)?.[1] || 'unknown', 'native');
       setShowMenu(false);
     } else if (result.success && result.method === 'clipboard') {
+      // Track share via clipboard
+      telemetry.trackGistShare(url.match(/gist\.github\.com\/[^/]+\/([a-f0-9]+)/i)?.[1] || 'unknown', 'clipboard');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } else {
@@ -416,7 +423,10 @@ const ShareButton = ({ url, title, description, compact = false }) => {
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setShowMenu(false)}
+              onClick={() => {
+                telemetry.trackGistShare(url.match(/gist\.github\.com\/[^/]+\/([a-f0-9]+)/i)?.[1] || 'unknown', 'twitter');
+                setShowMenu(false);
+              }}
             >
               <Twitter className="w-4 h-4" />
               <span>Twitter</span>
@@ -426,7 +436,10 @@ const ShareButton = ({ url, title, description, compact = false }) => {
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setShowMenu(false)}
+              onClick={() => {
+                telemetry.trackGistShare(url.match(/gist\.github\.com\/[^/]+\/([a-f0-9]+)/i)?.[1] || 'unknown', 'facebook');
+                setShowMenu(false);
+              }}
             >
               <Facebook className="w-4 h-4" />
               <span>Facebook</span>
@@ -436,7 +449,10 @@ const ShareButton = ({ url, title, description, compact = false }) => {
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setShowMenu(false)}
+              onClick={() => {
+                telemetry.trackGistShare(url.match(/gist\.github\.com\/[^/]+\/([a-f0-9]+)/i)?.[1] || 'unknown', 'linkedin');
+                setShowMenu(false);
+              }}
             >
               <Linkedin className="w-4 h-4" />
               <span>LinkedIn</span>
@@ -444,7 +460,10 @@ const ShareButton = ({ url, title, description, compact = false }) => {
             <a
               href={shareUrls.email}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setShowMenu(false)}
+              onClick={() => {
+                telemetry.trackGistShare(url.match(/gist\.github\.com\/[^/]+\/([a-f0-9]+)/i)?.[1] || 'unknown', 'email');
+                setShowMenu(false);
+              }}
             >
               <Mail className="w-4 h-4" />
               <span>Email</span>
@@ -516,19 +535,40 @@ export default function GistLens() {
     setActiveFileIndex(0);
     
     try {
-      const response = await fetch(`https://api.github.com/gists/${id}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) throw new Error('Gist not found. Check the ID or URL.');
-        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
-        throw new Error('Failed to fetch Gist data.');
+      // Try authenticated API first if logged in
+      let data;
+      if (githubAuth.isAuthenticated()) {
+        try {
+          data = await githubAuth.fetchGist(id);
+        } catch (authError) {
+          console.warn('Authenticated fetch failed, falling back to public API:', authError);
+          // Fall back to public API
+          const response = await fetch(`https://api.github.com/gists/${id}`);
+          if (!response.ok) {
+            if (response.status === 404) throw new Error('Gist not found. Check the ID or URL.');
+            if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+            throw new Error('Failed to fetch Gist data.');
+          }
+          data = await response.json();
+        }
+      } else {
+        const response = await fetch(`https://api.github.com/gists/${id}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) throw new Error('Gist not found. Check the ID or URL.');
+          if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+          throw new Error('Failed to fetch Gist data.');
+        }
+        data = await response.json();
       }
 
-      const data = await response.json();
       setGistData(data);
       addToHistory(data);
       setInput(`https://gist.github.com/${data.owner?.login || 'anonymous'}/${data.id}`);
-    } catch (err) {
+      
+      // Track gist view
+      telemetry.trackGistView(id, data.owner?.login, Object.keys(data.files).length);
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
@@ -541,18 +581,39 @@ export default function GistLens() {
     setUserGists([]);
     
     try {
-      const response = await fetch(`https://api.github.com/users/${username}/gists`);
-      
-      if (!response.ok) {
-        if (response.status === 404) throw new Error('User not found. Check the username.');
-        if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
-        throw new Error('Failed to fetch user gists.');
+      // Try authenticated API first if logged in
+      let data;
+      if (githubAuth.isAuthenticated()) {
+        try {
+          data = await githubAuth.fetchUserGists(username);
+        } catch (authError) {
+          console.warn('Authenticated fetch failed, falling back to public API:', authError);
+          // Fall back to public API
+          const response = await fetch(`https://api.github.com/users/${username}/gists`);
+          if (!response.ok) {
+            if (response.status === 404) throw new Error('User not found. Check the username.');
+            if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+            throw new Error('Failed to fetch user gists.');
+          }
+          data = await response.json();
+        }
+      } else {
+        const response = await fetch(`https://api.github.com/users/${username}/gists`);
+        
+        if (!response.ok) {
+          if (response.status === 404) throw new Error('User not found. Check the username.');
+          if (response.status === 403) throw new Error('API Rate limit exceeded. Please try again later.');
+          throw new Error('Failed to fetch user gists.');
+        }
+        data = await response.json();
       }
 
-      const data = await response.json();
       setUserGists(data);
       setInput(`https://gist.github.com/${username}`);
-    } catch (err) {
+      
+      // Track user gists browse
+      telemetry.trackUserGistsBrowse(username, data.length);
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
@@ -644,6 +705,19 @@ export default function GistLens() {
 
   // Effects
   useEffect(() => {
+    // Initialize telemetry
+    const telemetryConfig = localStorage.getItem('gistlens-telemetry');
+    if (telemetryConfig) {
+      try {
+        const config = JSON.parse(telemetryConfig);
+        if (config.enabled) {
+          telemetry.init(config);
+        }
+      } catch (error) {
+        console.error('Failed to initialize telemetry:', error);
+      }
+    }
+    
     // Load theme
     const savedTheme = localStorage.getItem('gistlens-theme');
     if (savedTheme === 'light') setDarkMode(false);
@@ -654,6 +728,9 @@ export default function GistLens() {
 
     // Fetch featured gists on mount
     fetchFeaturedGists();
+    
+    // Track initial page view
+    telemetry.trackPageView('home');
 
     // Inject PrismJS for fallback syntax highlighting
     const loadPrism = async () => {
@@ -719,6 +796,7 @@ export default function GistLens() {
     const currentUrl = window.location.href;
     
     if (view === 'home') {
+      telemetry.trackPageView('home');
       updatePageMetadata({
         title: 'GistLens - Beautiful GitHub Gist Viewer',
         description: 'View GitHub gists beautifully with syntax highlighting, markdown preview, user gist browsing, and more. Modern UI with dark mode support.',
@@ -727,6 +805,7 @@ export default function GistLens() {
         type: 'website'
       });
     } else if (view === 'gist' && gistData) {
+      telemetry.trackPageView('gist', { gist_id: gistData.id });
       const firstFile = Object.values(gistData.files)[0];
       const fileName = firstFile?.filename || 'Gist';
       const description = gistData.description || `View ${fileName} on GistLens`;
@@ -754,6 +833,7 @@ export default function GistLens() {
         }
       });
     } else if (view === 'user' && currentUsername) {
+      telemetry.trackPageView('user', { username: currentUsername });
       updatePageMetadata({
         title: `${currentUsername}'s Gists - GistLens`,
         description: `Browse all public gists by ${currentUsername} on GistLens with beautiful syntax highlighting and markdown preview.`,
@@ -787,10 +867,13 @@ export default function GistLens() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [previewMode, gistData, activeFileIndex]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = parseInput(input);
     if (parsed) {
+      // Track search
+      telemetry.trackSearch(input, parsed.type);
+      
       if (parsed.type === 'gist') {
         setCurrentGistId(parsed.value);
         setCurrentUsername(null);
@@ -806,7 +889,9 @@ export default function GistLens() {
     }
   };
 
-  const handleFeaturedGistClick = (gistId) => {
+  const handleFeaturedGistClick = (gistId: string, category?: string) => {
+    telemetry.trackFeaturedGistClick(gistId, category || 'Unknown');
+    
     setCurrentGistId(gistId);
     setCurrentUsername(null);
     setView('gist');
@@ -862,7 +947,9 @@ export default function GistLens() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [sidebarOpen, handleBackToHome]);
 
-  const handleHistoryClick = (id) => {
+  const handleHistoryClick = (id: string) => {
+    telemetry.trackHistoryItemClick(id);
+    
     setCurrentGistId(id);
     setCurrentUsername(null);
     setView('gist');
@@ -880,6 +967,9 @@ export default function GistLens() {
   const handleSaveSettings = (newSettings: SettingsConfig) => {
     setSettings(newSettings);
     localStorage.setItem('gistlens-settings', JSON.stringify(newSettings));
+    
+    // Track settings save
+    telemetry.trackSettingsSave(newSettings);
     
     // Apply theme setting
     if (newSettings.defaultTheme === 'light') {
@@ -993,7 +1083,11 @@ export default function GistLens() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={() => {
+                  const newMode = !darkMode;
+                  setDarkMode(newMode);
+                  telemetry.trackThemeToggle(newMode ? 'dark' : 'light');
+                }}
                 className="hover:bg-primary/10 relative overflow-hidden group shrink-0"
                 aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               >
@@ -1011,7 +1105,10 @@ export default function GistLens() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setSettingsOpen(true)}
+                onClick={() => {
+                  setSettingsOpen(true);
+                  telemetry.trackSettingsOpen();
+                }}
                 className="hover:bg-primary/10 relative overflow-hidden group shrink-0"
                 aria-label="Settings"
               >
@@ -1023,6 +1120,8 @@ export default function GistLens() {
               <p>Settings</p>
             </TooltipContent>
           </Tooltip>
+
+          <GitHubAuthButton />
           
           {gistData && (
             <Tooltip>
@@ -1412,6 +1511,8 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
       document.execCommand('copy');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      // Track copy event
+      telemetry.trackCopyCode(gistData?.id || 'unknown', file.filename);
     } catch (err) {
       console.error('Failed to copy', err);
     }
@@ -1428,6 +1529,8 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    // Track download event
+    telemetry.trackFileDownload(gistData?.id || 'unknown', file.filename);
   };
 
   return (
@@ -1456,7 +1559,11 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
               <Button
                 variant={previewMode ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setPreviewMode(!previewMode)}
+                onClick={() => {
+                  const newMode = !previewMode;
+                  setPreviewMode(newMode);
+                  telemetry.trackPreviewToggle(file.filename, newMode);
+                }}
                 className="h-8"
               >
                 {previewMode ? (
@@ -1528,7 +1635,11 @@ const FileToolbar = ({ file, isFullscreen, toggleFullscreen, previewMode, setPre
             <Button 
               variant="ghost"
               size="icon"
-              onClick={toggleFullscreen}
+              onClick={() => {
+                const newFullscreen = !isFullscreen;
+                toggleFullscreen();
+                telemetry.trackFullscreenToggle(newFullscreen);
+              }}
               className="h-8 w-8"
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
@@ -1678,7 +1789,7 @@ const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
             <FeaturedGistCard
               key={gist.id}
               gist={gist}
-              onClick={() => onFeaturedGistClick(gist.id)}
+              onClick={() => onFeaturedGistClick(gist.id, gist.category)}
             />
           ))}
         </div>
