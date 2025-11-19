@@ -1,20 +1,33 @@
-# 🔍 GistLens
+# 🔍 GistLens v2.0
 
-Beautifully view your GitHub gists interactively with a modern, feature-rich web interface.
+Beautifully view your GitHub gists interactively with a modern, feature-rich web interface powered by shadcn/ui and enhanced markdown rendering.
 
 ## ✨ Features
 
-- 🎨 **Beautiful UI** - Modern, responsive design with smooth animations
-- 🌓 **Dark/Light Mode** - Toggle between dark and light themes
+### Core Features
+- 🎨 **Beautiful Modern UI** - Built with shadcn/ui components and Tailwind CSS v3
+- 🌓 **Dark/Light Mode** - Seamless theme switching with persistent storage
 - 🔍 **GitHub API Integration** - Fetch and display any public gist by URL or ID
-- 🎯 **Syntax Highlighting** - PrismJS-powered syntax highlighting for 15+ languages
-- 📝 **Markdown Preview** - Render markdown files with GitHub-flavored styling
-- 📂 **Multi-file Support** - View and switch between multiple files in a gist
+- 🎯 **Advanced Syntax Highlighting** - PrismJS with 15+ language support
+- 📝 **Enhanced Markdown Rendering** - GitHub-flavored markdown with math support (KaTeX)
+- 🧮 **Math Rendering** - Full LaTeX math equation support via KaTeX
+- 📂 **Multi-file Support** - Enhanced tabbed interface for multiple files
 - 📥 **Download Files** - Download individual files from gists
 - 📋 **One-Click Copy** - Copy code to clipboard with visual feedback
-- 📚 **History Tracking** - Keep track of recently viewed gists in local storage
-- 🖥️ **Fullscreen Mode** - Focus on code with fullscreen viewing
-- 📱 **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
+- 📚 **History Tracking** - Beautiful history sidebar with recently viewed gists
+- 🖥️ **Fullscreen Mode** - Distraction-free code viewing
+- 📱 **Fully Responsive** - Optimized for desktop, tablet, and mobile
+- ✨ **Gradient Effects** - Beautiful gradient accents throughout the UI
+- 🎭 **Smooth Animations** - Polished transitions and micro-interactions
+
+### Enhanced Markdown Features
+- ✅ GitHub-flavored markdown (GFM)
+- 🧮 Math equations with KaTeX
+- 🔗 Auto-linked headings with slugs
+- 📊 Tables with proper styling
+- ✓ Task lists
+- 💻 Enhanced code blocks with syntax highlighting
+- 🎨 Custom styling for blockquotes, lists, and more
 
 ## 🚀 Quick Start
 
@@ -58,29 +71,53 @@ npm run preview
 
 ## 🛠️ Technology Stack
 
-- **React 18** - UI framework
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
-- **Lucide React** - Beautiful icon library
-- **PrismJS** - Syntax highlighting (loaded via CDN)
-- **Marked** - Markdown parser (loaded via CDN)
-- **DOMPurify** - HTML sanitizer (loaded via CDN)
-- **GitHub Markdown CSS** - GitHub-flavored markdown styling (loaded via CDN)
+### Core Technologies
+- **React 18** - Modern UI framework with hooks
+- **Vite 5** - Lightning-fast build tool and dev server
+- **Tailwind CSS v3** - Utility-first CSS framework
+- **shadcn/ui** - Beautiful, accessible component library
+- **Lucide React** - Modern icon library
+
+### Markdown & Code Rendering
+- **Unified** - Markdown processing pipeline
+- **Remark** - Markdown parsing (remark-gfm, remark-math)
+- **Rehype** - HTML processing (rehype-katex, rehype-slug, rehype-autolink-headings, rehype-prism-plus)
+- **KaTeX** - Fast math rendering
+- **PrismJS** - Fallback syntax highlighting
+
+### UI Components (shadcn/ui)
+- **Radix UI** - Accessible primitive components
+  - Tabs
+  - Scroll Area
+  - Separator
+  - Slot
+- **CVA** - Class variance authority for component variants
+- **Tailwind Merge** - Intelligent Tailwind class merging
 
 ## 📦 Project Structure
 
 ```
 gistlens/
 ├── src/
-│   ├── App.jsx          # Main application component
-│   ├── main.jsx         # React entry point
-│   └── index.css        # Global styles
-├── index.html           # HTML entry point
-├── package.json         # Dependencies and scripts
-├── vite.config.js       # Vite configuration
-├── tailwind.config.js   # Tailwind CSS configuration
-├── postcss.config.js    # PostCSS configuration
-└── .eslintrc.cjs        # ESLint configuration
+│   ├── components/
+│   │   ├── ui/                    # shadcn/ui components
+│   │   │   ├── button.jsx
+│   │   │   ├── tabs.jsx
+│   │   │   ├── separator.jsx
+│   │   │   └── scroll-area.jsx
+│   │   └── MarkdownRenderer.jsx   # Enhanced markdown component
+│   ├── lib/
+│   │   ├── utils.js               # Utility functions (cn)
+│   │   └── button-variants.js     # Button variant definitions
+│   ├── App.jsx                    # Main application (v2.0)
+│   ├── main.jsx                   # React entry point
+│   └── index.css                  # Global styles + shadcn theme
+├── index.html                     # HTML entry point
+├── package.json                   # Dependencies and scripts
+├── vite.config.js                 # Vite + MDX configuration
+├── tailwind.config.js             # Tailwind CSS + shadcn config
+├── postcss.config.js              # PostCSS configuration
+└── .eslintrc.cjs                  # ESLint configuration
 ```
 
 ## 🎨 Features in Detail
@@ -99,17 +136,26 @@ Supports 15+ languages including:
 - YAML
 - And more...
 
-### Markdown Preview
-- GitHub-flavored markdown rendering
-- Syntax highlighting in code blocks
-- Dark mode support
-- Sanitized HTML output for security
+### Enhanced Markdown Preview
+- **GitHub-flavored markdown** with full GFM support
+- **Math equations** rendered with KaTeX (inline and block)
+- **Auto-linked headings** with anchor links
+- **Syntax highlighting** in code blocks with line numbers
+- **Tables** with proper borders and styling
+- **Task lists** with checkbox support
+- **Blockquotes** with custom styling
+- **Dark mode support** with proper theme variables
+- **Sanitized HTML** output for security
 
 ### History Management
+- Beautiful sidebar with card-based layout
 - Stores last 10 viewed gists
 - Persists across browser sessions
 - Shows gist metadata (owner, file count, date)
+- Avatar display for gist owners
+- Hover effects and smooth animations
 - Easy removal of individual history items
+- Active state highlighting
 
 ## 🤝 Contributing
 
