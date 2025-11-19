@@ -1,7 +1,7 @@
 {
   "name": "gistlens",
   "version": "1.0.0",
-  "description": "Beautifully view your gists interactively",
+  "description": "Beautifully view your gists interactively with rich media support - images, videos, audio, data files, and more",
   "type": "module",
   "scripts": {
     "dev": "vite",
