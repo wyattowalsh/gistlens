@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Papa from 'papaparse';
-import { JsonViewer } from '@textea/json-viewer';
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, Download, FileText } from 'lucide-react';
+import { JsonView, defaultStyles } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Download, FileText, Copy, FileJson, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { GistFile } from '@/types';
@@ -62,7 +63,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
             }
             setIsLoading(false);
           },
-          error: (error) => {
+          error: (error: Error) => {
             setError('Failed to parse file: ' + error.message);
             setIsLoading(false);
           }
@@ -149,6 +150,53 @@ export function DataViewer({ file, className }: DataViewerProps) {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportCSV = () => {
+    if (!data || data.type !== 'table') return;
+    
+    const csv = Papa.unparse(filteredAndSortedData);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${file.filename.split('.')[0]}_filtered.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportJSON = () => {
+    if (!data) return;
+    
+    const jsonContent = data.type === 'table' 
+      ? JSON.stringify(filteredAndSortedData, null, 2)
+      : JSON.stringify(data.content, null, 2);
+    
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${file.filename.split('.')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyJSON = async () => {
+    if (!data) return;
+    
+    const jsonContent = data.type === 'table' 
+      ? JSON.stringify(filteredAndSortedData, null, 2)
+      : JSON.stringify(data.content, null, 2);
+    
+    try {
+      await navigator.clipboard.writeText(jsonContent);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[500px] bg-muted/20">
@@ -178,19 +226,22 @@ export function DataViewer({ file, className }: DataViewerProps) {
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold">JSON Data</h3>
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                <Copy className="w-4 h-4 mr-2" />
+                Copy
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownload}>
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            </div>
           </div>
           <div className="rounded-lg border bg-muted/20 p-4 overflow-auto max-h-[600px]">
-            <JsonViewer 
-              value={data.content} 
-              theme="auto"
-              defaultInspectDepth={2}
-              displayDataTypes={false}
-              displayObjectSize={true}
-              enableClipboard={true}
+            <JsonView 
+              data={data.content} 
+              shouldExpandNode={(level) => level < 2}
+              style={defaultStyles}
             />
           </div>
         </div>
@@ -214,6 +265,14 @@ export function DataViewer({ file, className }: DataViewerProps) {
               <div className="text-sm text-muted-foreground">
                 {filteredAndSortedData.length} rows
               </div>
+              <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportJSON}>
+                <FileJson className="w-4 h-4 mr-2" />
+                Export JSON
+              </Button>
               <Button variant="outline" size="sm" onClick={handleDownload}>
                 <Download className="w-4 h-4 mr-2" />
                 Download
@@ -225,7 +284,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
             <table className="w-full text-sm">
               <thead className="bg-muted sticky top-0 z-10">
                 <tr>
-                  {data.fields.map((field, idx) => (
+                  {data.fields?.map((field, idx) => (
                     <th 
                       key={idx}
                       className="px-4 py-3 text-left font-semibold cursor-pointer hover:bg-muted/80 transition-colors group"
@@ -255,7 +314,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
                     key={idx}
                     className="border-t hover:bg-muted/50 transition-colors"
                   >
-                    {data.fields.map((field, fieldIdx) => (
+                    {data.fields?.map((field, fieldIdx) => (
                       <td 
                         key={fieldIdx}
                         className="px-4 py-3"
@@ -268,7 +327,7 @@ export function DataViewer({ file, className }: DataViewerProps) {
                 {filteredAndSortedData.length === 0 && (
                   <tr>
                     <td 
-                      colSpan={data.fields.length}
+                      colSpan={data.fields?.length || 1}
                       className="px-4 py-8 text-center text-muted-foreground"
                     >
                       No data found

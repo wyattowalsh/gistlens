@@ -3,7 +3,7 @@ import { Settings, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface SettingsConfig {
+export interface SettingsConfig {
   autoPreviewMarkdown: boolean;
   defaultTheme: 'light' | 'dark' | 'system';
   showLineNumbers: boolean;
@@ -11,6 +11,9 @@ interface SettingsConfig {
   enableSyntaxHighlighting: boolean;
   autoLoadGists: boolean;
   historyLimit: number;
+  compactMode: boolean;
+  enableAnimations: boolean;
+  wrapLongLines: boolean;
 }
 
 interface SettingsDialogProps {
@@ -37,6 +40,9 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
       enableSyntaxHighlighting: true,
       autoLoadGists: true,
       historyLimit: 10,
+      compactMode: false,
+      enableAnimations: true,
+      wrapLongLines: false,
     };
     setLocalSettings(defaultSettings);
   };
@@ -213,6 +219,69 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
                 </button>
               </div>
 
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                <div>
+                  <label className="font-medium text-sm">Compact Mode</label>
+                  <p className="text-xs text-muted-foreground">Reduce spacing for more content</p>
+                </div>
+                <button
+                  onClick={() => setLocalSettings({ ...localSettings, compactMode: !localSettings.compactMode })}
+                  className={cn(
+                    "relative w-11 h-6 rounded-full transition-colors",
+                    localSettings.compactMode ? "bg-primary" : "bg-muted"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform",
+                      localSettings.compactMode ? "left-5" : "left-0.5"
+                    )}
+                  />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                <div>
+                  <label className="font-medium text-sm">Enable Animations</label>
+                  <p className="text-xs text-muted-foreground">Show smooth transitions and effects</p>
+                </div>
+                <button
+                  onClick={() => setLocalSettings({ ...localSettings, enableAnimations: !localSettings.enableAnimations })}
+                  className={cn(
+                    "relative w-11 h-6 rounded-full transition-colors",
+                    localSettings.enableAnimations ? "bg-primary" : "bg-muted"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform",
+                      localSettings.enableAnimations ? "left-5" : "left-0.5"
+                    )}
+                  />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                <div>
+                  <label className="font-medium text-sm">Wrap Long Lines</label>
+                  <p className="text-xs text-muted-foreground">Wrap code lines instead of scrolling</p>
+                </div>
+                <button
+                  onClick={() => setLocalSettings({ ...localSettings, wrapLongLines: !localSettings.wrapLongLines })}
+                  className={cn(
+                    "relative w-11 h-6 rounded-full transition-colors",
+                    localSettings.wrapLongLines ? "bg-primary" : "bg-muted"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform",
+                      localSettings.wrapLongLines ? "left-5" : "left-0.5"
+                    )}
+                  />
+                </button>
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
                   <label className="font-medium text-sm">History Limit</label>
@@ -256,5 +325,3 @@ export function SettingsDialog({ isOpen, onClose, settings, onSave }: SettingsDi
     </div>
   );
 }
-
-export type { SettingsConfig };

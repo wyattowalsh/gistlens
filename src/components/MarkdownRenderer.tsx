@@ -15,6 +15,12 @@ interface MarkdownRendererProps {
  * - Syntax highlighting (Prism)
  * - Auto-linked headings
  * - Tables, task lists, and more
+ * - Emoji support
+ * - Footnotes
+ * - Directives (custom containers)
+ * - Table of contents
+ * - External link handling
+ * - Better line breaks
  */
 export function MarkdownRenderer({ content, darkMode, className }: MarkdownRendererProps) {
   const [html, setHtml] = useState<string>('');
@@ -39,16 +45,38 @@ export function MarkdownRenderer({ content, darkMode, className }: MarkdownRende
 
       try {
         // Dynamic import for better performance
-        const [{ unified }, { default: remarkParse }, { default: remarkGfm }, { default: remarkMath }, { default: remarkRehype }, { default: rehypeKatex }, { default: rehypeSlug }, { default: rehypeAutolinkHeadings }, { default: rehypePrism }, { default: rehypeStringify }, { default: rehypeSanitize }] = await Promise.all([
+        const [
+          { unified },
+          { default: remarkParse },
+          { default: remarkGfm },
+          { default: remarkMath },
+          { default: remarkEmoji },
+          { default: remarkDirective },
+          { default: remarkBreaks },
+          { default: remarkUnwrapImages },
+          { default: remarkRehype },
+          { default: rehypeKatex },
+          { default: rehypeSlug },
+          { default: rehypeAutolinkHeadings },
+          { default: rehypePrism },
+          { default: rehypeExternalLinks },
+          { default: rehypeStringify },
+          { default: rehypeSanitize }
+        ] = await Promise.all([
           import('unified'),
           import('remark-parse'),
           import('remark-gfm'),
           import('remark-math'),
+          import('remark-emoji'),
+          import('remark-directive'),
+          import('remark-breaks'),
+          import('remark-unwrap-images'),
           import('remark-rehype'),
           import('rehype-katex'),
           import('rehype-slug'),
           import('rehype-autolink-headings'),
           import('rehype-prism-plus'),
+          import('rehype-external-links'),
           import('rehype-stringify'),
           import('rehype-sanitize')
         ]);
@@ -57,6 +85,10 @@ export function MarkdownRenderer({ content, darkMode, className }: MarkdownRende
           .use(remarkParse)
           .use(remarkGfm)
           .use(remarkMath)
+          .use(remarkEmoji)
+          .use(remarkDirective)
+          .use(remarkBreaks)
+          .use(remarkUnwrapImages)
           .use(remarkRehype, { allowDangerousHtml: true })
           .use(rehypeKatex)
           .use(rehypeSlug)
@@ -69,6 +101,13 @@ export function MarkdownRenderer({ content, darkMode, className }: MarkdownRende
           .use(rehypePrism, { 
             ignoreMissing: true,
             showLineNumbers: true
+          })
+          .use(rehypeExternalLinks, {
+            target: '_blank',
+            rel: ['noopener', 'noreferrer'],
+            properties: {
+              className: ['external-link']
+            }
           })
           .use(rehypeSanitize)
           .use(rehypeStringify);
@@ -169,6 +208,46 @@ export function MarkdownRenderer({ content, darkMode, className }: MarkdownRende
           display: block;
           padding-right: 0.8em;
           text-align: right;
+        }
+        .markdown-renderer .external-link::after {
+          content: "↗";
+          font-size: 0.8em;
+          margin-left: 0.2em;
+          opacity: 0.7;
+        }
+        .markdown-renderer .footnotes {
+          margin-top: 2rem;
+          padding-top: 1rem;
+          border-top: 2px solid var(--border);
+          font-size: 0.9em;
+        }
+        .markdown-renderer .footnotes li {
+          margin-bottom: 0.5rem;
+        }
+        .markdown-renderer sup {
+          line-height: 0;
+        }
+        .markdown-renderer .directive {
+          padding: 1rem;
+          margin: 1rem 0;
+          border-radius: 0.5rem;
+          border-left: 4px solid;
+        }
+        .markdown-renderer .directive-note {
+          background-color: rgba(59, 130, 246, 0.1);
+          border-color: rgb(59, 130, 246);
+        }
+        .markdown-renderer .directive-warning {
+          background-color: rgba(234, 179, 8, 0.1);
+          border-color: rgb(234, 179, 8);
+        }
+        .markdown-renderer .directive-danger {
+          background-color: rgba(239, 68, 68, 0.1);
+          border-color: rgb(239, 68, 68);
+        }
+        .markdown-renderer .directive-tip {
+          background-color: rgba(34, 197, 94, 0.1);
+          border-color: rgb(34, 197, 94);
         }
       `}</style>
       <div 
