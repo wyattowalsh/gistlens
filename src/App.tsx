@@ -22,7 +22,6 @@ import {
   Star,
   Sparkles,
   Zap,
-  Home,
   User,
   ChevronRight,
   BookOpen,
@@ -931,24 +930,6 @@ export default function GistLens() {
                 <p>{sidebarOpen ? "Close sidebar" : "Open sidebar"} (Esc)</p>
               </TooltipContent>
             </Tooltip>
-          {view !== 'home' && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleBackToHome}
-                  className="hover:bg-primary/10 shrink-0"
-                >
-                  <Home className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Home</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Return to homepage (⌘H)</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group/logo" onClick={handleBackToHome}>
