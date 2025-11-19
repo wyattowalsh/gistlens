@@ -2,6 +2,26 @@
 
 This document provides comprehensive instructions for AI coding agents (GitHub Copilot, Cursor, Claude, etc.) working on the GistLens project.
 
+## 🚨 CRITICAL: Security Notice
+
+⚠️ **The `src/` directory contains OLD client-side code from the Vite/React version and should NOT be used as a reference for new code.**
+
+- This directory exists only for reference during migration
+- It is excluded from the Next.js build
+- **DO NOT copy patterns from `src/` - use the new Next.js patterns in `app/`, `components/`, and `lib/` instead**
+- Security issues in old code (like exposed secrets) do NOT affect the new Next.js version
+
+## 📚 Specialized Agent Guides
+
+For detailed guidance on specific topics, see the **`agents/`** directory:
+
+- **[agents/security.md](agents/security.md)** - Security best practices, secret management, validation patterns
+- **[agents/architecture.md](agents/architecture.md)** - System architecture, design patterns, data flow
+- **[agents/frontend.md](agents/frontend.md)** - React/Next.js patterns, styling, components
+- **[agents/README.md](agents/README.md)** - Overview of all specialized guides
+
+**This document provides a quick-start overview. For deep dives, consult the specialized guides.**
+
 ## Table of Contents
 
 - [Project Overview](#project-overview)
@@ -12,6 +32,7 @@ This document provides comprehensive instructions for AI coding agents (GitHub C
 - [Testing Guidelines](#testing-guidelines)
 - [Security Best Practices](#security-best-practices)
 - [Documentation Standards](#documentation-standards)
+- [Agent-Specific Guidelines](#agent-specific-guidelines)
 
 ## Project Overview
 
