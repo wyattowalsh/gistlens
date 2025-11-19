@@ -24,9 +24,7 @@ import {
   Zap,
   Home,
   User,
-  TrendingUp,
   ChevronRight,
-  Rocket,
   BookOpen,
   Lightbulb,
   Share2,
@@ -1442,73 +1440,37 @@ const CodeBlock = ({ content, language }) => {
 // --- HomePage Component ---
 const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 sm:space-y-10 md:space-y-12">
-      {/* Hero Section */}
-      <div className="text-center space-y-4 sm:space-y-6 py-8 sm:py-12 md:py-20">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+      {/* Compact Hero Section */}
+      <div className="text-center space-y-3 sm:space-y-4 py-6 sm:py-8 md:py-12">
         <div className="relative inline-block px-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-3xl opacity-30 animate-pulse"></div>
-          <h1 className="relative text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-3xl opacity-20 animate-pulse"></div>
+          <h1 className="relative text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
             GistLens
           </h1>
         </div>
-        <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
-          Beautiful GitHub Gist Viewer with Enhanced Features
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto px-4">
+          View and share GitHub gists with syntax highlighting and markdown preview
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 pt-4 sm:pt-6 px-4">
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
-            <Rocket className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="text-xs sm:text-sm font-medium">Modern UI</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="text-xs sm:text-sm font-medium">Syntax Highlighting</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
-            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            <span className="text-xs sm:text-sm font-medium">Markdown Preview</span>
-          </div>
-        </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-        <FeatureCard
-          icon={FileCode}
-          title="View Any Gist"
-          description="Paste a gist URL or ID to view beautifully rendered code with syntax highlighting"
-          gradient="from-blue-500 to-cyan-500"
-        />
-        <FeatureCard
-          icon={User}
-          title="Browse User Gists"
-          description="Enter a username to explore all public gists from any GitHub user"
-          gradient="from-purple-500 to-pink-500"
-        />
-        <FeatureCard
-          icon={TrendingUp}
-          title="Featured Gists"
-          description="Discover awesome gists curated for learning and inspiration"
-          gradient="from-orange-500 to-red-500"
-        />
-      </div>
-
-      {/* Featured Gists Section */}
-      <div className="space-y-4 sm:space-y-6">
+      {/* Featured Gists Section - Now Primary */}
+      <div className="space-y-4 sm:space-y-5">
         <div className="flex items-center justify-between px-2">
-          <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3">
-            <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500 fill-yellow-500" />
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+            <Star className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-yellow-500 fill-yellow-500 animate-pulse" />
             Featured Gists
           </h2>
           <div className="flex items-center gap-2">
             {loadingFeatured && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Sparkles className="w-4 h-4 animate-pulse" />
-                <span className="hidden sm:inline">Refreshing...</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
+                <span className="hidden sm:inline">Loading...</span>
               </div>
             )}
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
           {featuredGists.map((gist) => (
             <FeaturedGistCard
               key={gist.id}
@@ -1519,51 +1481,80 @@ const HomePage = ({ onFeaturedGistClick, featuredGists, loadingFeatured }) => {
         </div>
       </div>
 
-      {/* How to Use Section */}
-      <div className="bg-gradient-to-br from-card via-card to-muted/20 rounded-2xl border p-4 sm:p-6 md:p-8 lg:p-12 space-y-4 sm:space-y-6">
-        <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3">
-          <Lightbulb className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />
-          How to Use
+      {/* Quick Usage Guide */}
+      <div className="bg-gradient-to-br from-card via-card to-muted/20 rounded-2xl border p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
+          <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          Quick Start
         </h2>
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
-          <HowToCard
-            number="1"
-            title="View a Specific Gist"
-            description="Paste a gist URL (e.g., https://gist.github.com/user/abc123) or just the ID"
+        <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+          <QuickActionCard
+            icon={FileCode}
+            title="View Gist"
+            description="Paste gist URL or ID in the search bar above"
+            shortcut="Ctrl+K"
           />
-          <HowToCard
-            number="2"
-            title="Browse User Gists"
-            description="Enter a username (e.g., 'wyattowalsh') or user URL to see all their public gists"
+          <QuickActionCard
+            icon={User}
+            title="Browse User"
+            description="Enter a GitHub username to explore their gists"
+            shortcut="@username"
           />
-          <HowToCard
-            number="3"
-            title="Explore Features"
-            description="Use tabs for multi-file gists, toggle preview for markdown, and download files"
+          <QuickActionCard
+            icon={Download}
+            title="Download Files"
+            description="Download individual files or entire gists"
+            shortcut="Click ↓"
           />
-          <HowToCard
-            number="4"
-            title="Customize Experience"
-            description="Switch between dark/light mode and access your viewing history in the sidebar"
+          <QuickActionCard
+            icon={Share2}
+            title="Share"
+            description="Share gists, files, or code snippets easily"
+            shortcut="Click 🔗"
           />
         </div>
+      </div>
+
+      {/* Keyboard Shortcuts */}
+      <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border p-4 sm:p-5 space-y-3">
+        <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+          <Terminal className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          Keyboard Shortcuts
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <ShortcutBadge keys="Ctrl+K" description="Focus search" />
+          <ShortcutBadge keys="Ctrl+H" description="Go home" />
+          <ShortcutBadge keys="Ctrl+D" description="Toggle theme" />
+          <ShortcutBadge keys="Esc" description="Close sidebar" />
+        </div>
+      </div>
+
+      {/* Advanced Features */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <CompactFeatureCard
+          icon={Eye}
+          title="Preview"
+          description="Live markdown rendering"
+        />
+        <CompactFeatureCard
+          icon={Code2}
+          title="Syntax"
+          description="15+ languages supported"
+        />
+        <CompactFeatureCard
+          icon={Clock}
+          title="History"
+          description="Recently viewed gists"
+        />
+        <CompactFeatureCard
+          icon={Moon}
+          title="Dark Mode"
+          description="Eye-friendly themes"
+        />
       </div>
     </div>
   );
 };
-
-const FeatureCard = ({ icon: Icon, title, description, gradient }) => (
-  <div className="group relative p-4 sm:p-6 rounded-2xl border bg-card hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
-    <div className={cn("absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300", gradient)}></div>
-    <div className="relative space-y-2 sm:space-y-3">
-      <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br flex items-center justify-center group-hover:scale-110 transition-transform duration-300", gradient)}>
-        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white group-hover:rotate-6 transition-transform duration-300" />
-      </div>
-      <h3 className="text-lg sm:text-xl font-bold group-hover:text-primary transition-colors">{title}</h3>
-      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>
-    </div>
-  </div>
-);
 
 const FeaturedGistCard = ({ gist, onClick }) => {
   const Icon = gist.icon;
@@ -1600,14 +1591,46 @@ const FeaturedGistCard = ({ gist, onClick }) => {
   );
 };
 
-const HowToCard = ({ number, title, description }) => (
-  <div className="group flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-muted/50 hover:bg-muted transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
-    <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-base sm:text-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
-      {number}
+const QuickActionCard = ({ icon: Icon, title, description, shortcut }) => (
+  <div className="group relative p-3 sm:p-4 rounded-xl border bg-card hover:bg-muted/50 transition-all duration-200 hover:scale-[1.01] overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+    <div className="relative space-y-2">
+      <div className="flex items-center justify-between">
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary group-hover:scale-110 transition-transform" />
+        {shortcut && (
+          <span className="text-[10px] sm:text-xs font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+            {shortcut}
+          </span>
+        )}
+      </div>
+      <div>
+        <h4 className="text-xs sm:text-sm font-bold mb-0.5">{title}</h4>
+        <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">{description}</p>
+      </div>
     </div>
-    <div className="space-y-1">
-      <h4 className="text-sm sm:text-base font-bold group-hover:text-primary transition-colors">{title}</h4>
-      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{description}</p>
+  </div>
+);
+
+const ShortcutBadge = ({ keys, description }) => (
+  <div className="flex flex-col gap-1 p-2 rounded-lg bg-card/50 border border-border/50">
+    <kbd className="text-[10px] sm:text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-muted text-foreground text-center">
+      {keys}
+    </kbd>
+    <span className="text-[9px] sm:text-[10px] text-muted-foreground text-center leading-tight">
+      {description}
+    </span>
+  </div>
+);
+
+const CompactFeatureCard = ({ icon: Icon, title, description }) => (
+  <div className="group relative p-3 sm:p-4 rounded-xl border bg-card hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+    <div className="relative space-y-2">
+      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-300" />
+      <div>
+        <h4 className="text-xs sm:text-sm font-bold mb-0.5 group-hover:text-primary transition-colors">{title}</h4>
+        <p className="text-[10px] sm:text-xs text-muted-foreground">{description}</p>
+      </div>
     </div>
   </div>
 );
