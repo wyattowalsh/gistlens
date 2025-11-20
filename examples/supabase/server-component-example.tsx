@@ -12,7 +12,7 @@
  * - Error handling
  */
 
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/supabase';
 import type { GistHistory, UserSettings } from '@/types/supabase';
 
 interface Props {
@@ -36,7 +36,7 @@ export async function ServerComponentExample({ userId }: Props) {
     .from('user_settings')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .single<UserSettings>();
 
   // Handle errors
   if (historyError) {
@@ -74,7 +74,7 @@ export async function ServerComponentExample({ userId }: Props) {
         <h2 className="text-xl font-bold">Recent Gists</h2>
         {history && history.length > 0 ? (
           <div className="mt-2 space-y-2">
-            {history.map((gist) => (
+            {history.map((gist: GistHistory) => (
               <div key={gist.id} className="rounded border p-3">
                 <div className="font-medium">{gist.gist_id}</div>
                 {gist.gist_description && (
@@ -116,7 +116,7 @@ export async function AuthenticatedServerComponent() {
     .from('user_settings')
     .select('*')
     .eq('user_id', user.id)
-    .single();
+    .single<UserSettings>();
 
   return (
     <div className="space-y-4">
@@ -148,7 +148,7 @@ export async function ParallelFetchingExample({ userId }: Props) {
       .from('user_settings')
       .select('*')
       .eq('user_id', userId)
-      .single(),
+      .single<UserSettings>(),
     supabase
       .from('custom_styles')
       .select('*')

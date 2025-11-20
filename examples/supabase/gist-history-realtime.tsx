@@ -14,8 +14,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@/lib/supabase/client';
-import { subscribeToGistHistory } from '@/lib/supabase/realtime';
+import { createBrowserClient } from '@/lib/supabase';
+import { subscribeToGistHistory } from '@/lib/supabase';
 import type { GistHistory } from '@/types/supabase';
 
 interface Props {
